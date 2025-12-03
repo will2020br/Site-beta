@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundScroll - Player TikTok de Música REAL</title>
+    <title>SoundScroll - Player Híbrido TikTok</title>
     <style>
         * {
             margin: 0;
@@ -41,7 +41,7 @@
         
         .track-wrapper {
             width: 100%;
-            max-width: 500px;
+            max-width: 550px;
             height: auto;
             display: flex;
             flex-direction: column;
@@ -93,8 +93,28 @@
             margin-bottom: 5px;
         }
         
+        .track-platform {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(255, 85, 0, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            color: #ff9500;
+            margin-top: 5px;
+        }
+        
         .player-controls {
             margin-top: 25px;
+        }
+        
+        /* Player nativo */
+        .native-player {
+            display: block;
+        }
+        
+        /* Player embed */
+        .embed-player {
+            display: none;
         }
         
         .progress-container {
@@ -166,12 +186,62 @@
             box-shadow: 0 5px 20px rgba(255, 85, 0, 0.6);
         }
         
+        /* Embed container */
+        .embed-container {
+            width: 100%;
+            height: 250px;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 20px 0;
+            background: #1a1a2e;
+            position: relative;
+        }
+        
+        .embed-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Volume control */
+        .volume-control {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .volume-slider {
+            width: 80px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        .volume-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5500;
+            cursor: pointer;
+        }
+        
         /* Playlist Sidebar */
         .playlist-sidebar {
             position: fixed;
             top: 0;
             right: -400px;
-            width: 350px;
+            width: 400px;
             height: 100vh;
             background: rgba(20, 20, 35, 0.95);
             backdrop-filter: blur(20px);
@@ -212,9 +282,23 @@
         
         .add-track-form {
             margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
         }
         
-        .url-input {
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        .url-input, .embed-input {
             width: 100%;
             padding: 12px 15px;
             background: rgba(255, 255, 255, 0.1);
@@ -223,10 +307,34 @@
             color: white;
             font-size: 14px;
             margin-bottom: 10px;
+            font-family: monospace;
         }
         
-        .url-input::placeholder {
+        .url-input::placeholder, .embed-input::placeholder {
             color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .type-btn {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        
+        .type-btn.active {
+            background: linear-gradient(45deg, #ff5500, #ff9500);
+            border-color: transparent;
         }
         
         .add-btn {
@@ -239,6 +347,10 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         
         .add-btn:hover {
@@ -247,7 +359,7 @@
         }
         
         .playlist-tracks {
-            max-height: calc(100vh - 200px);
+            max-height: calc(100vh - 280px);
             overflow-y: auto;
         }
         
@@ -280,12 +392,27 @@
             overflow: hidden;
             margin-right: 15px;
             flex-shrink: 0;
+            position: relative;
         }
         
         .playlist-track-artwork img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+        }
+        
+        .platform-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            width: 20px;
+            height: 20px;
+            background: #ff5500;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
         }
         
         .playlist-track-info {
@@ -308,6 +435,12 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+        
+        .playlist-track-platform {
+            font-size: 10px;
+            color: #ff9500;
+            margin-top: 2px;
         }
         
         .playlist-track-duration {
@@ -415,10 +548,10 @@
             box-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
         }
         
-        /* Audio upload button */
+        /* Upload button */
         .upload-btn {
             position: fixed;
-            bottom: 20px;
+            bottom: 80px;
             left: 20px;
             background: linear-gradient(45deg, #ff5500, #ff9500);
             color: white;
@@ -447,12 +580,12 @@
         /* Audio visualization */
         .audio-visualizer {
             width: 100%;
-            height: 60px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 2px;
-            margin-top: 20px;
+            margin-top: 15px;
         }
         
         .visualizer-bar {
@@ -505,18 +638,38 @@
                 height: 150px;
             }
             
+            .embed-container {
+                height: 200px;
+            }
+            
             .upload-btn {
                 bottom: 80px;
                 left: 50%;
                 transform: translateX(-50%);
                 white-space: nowrap;
             }
+            
+            .volume-control {
+                bottom: 140px;
+            }
         }
         
-        /* Audio player hidden */
-        .hidden-audio {
-            display: none;
+        /* Loading */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff5500;
+            font-size: 14px;
         }
+        
+        /* Platform colors */
+        .soundcloud { background: #ff5500; }
+        .youtube { background: #ff0000; }
+        .spotify { background: #1DB954; }
+        .native { background: #4285f4; }
+        .custom { background: #9c27b0; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -541,6 +694,12 @@
     <!-- Navigation Dots -->
     <div class="nav-dots" id="navDots"></div>
     
+    <!-- Volume Control -->
+    <div class="volume-control">
+        <i class="fas fa-volume-up" style="color: #ff5500;"></i>
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
+    </div>
+    
     <!-- Main Audio Player (Hidden) -->
     <audio id="mainAudioPlayer" class="hidden-audio" preload="metadata"></audio>
     
@@ -559,9 +718,24 @@
         </div>
         
         <div class="add-track-form">
-            <input type="text" class="url-input" id="trackUrl" 
-                   placeholder="Cole URL de áudio MP3 direto ou link do YouTube...">
-            <button class="add-btn" onclick="addTrackFromUrl()">
+            <div class="type-selector">
+                <button class="type-btn active" id="typeUrl" onclick="selectType('url')">URL de Áudio</button>
+                <button class="type-btn" id="typeEmbed" onclick="selectType('embed')">Código Embed</button>
+            </div>
+            
+            <div class="input-group" id="urlInputGroup">
+                <label class="input-label">URL de áudio (MP3, etc) ou link do YouTube/SoundCloud:</label>
+                <input type="text" class="url-input" id="trackUrl" 
+                       placeholder="https://exemplo.com/musica.mp3">
+            </div>
+            
+            <div class="input-group" id="embedInputGroup" style="display: none;">
+                <label class="input-label">Código Embed (SoundCloud, Spotify, YouTube, etc):</label>
+                <textarea class="embed-input" id="trackEmbed" rows="4" 
+placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"></textarea>
+            </div>
+            
+            <button class="add-btn" onclick="addTrack()">
                 <i class="fas fa-plus"></i> Adicionar à Playlist
             </button>
         </div>
@@ -574,50 +748,67 @@
     <script>
         // Player state
         let currentAudio = document.getElementById('mainAudioPlayer');
-        let audioContext = null;
-        let analyser = null;
-        let source = null;
+        let currentEmbed = null;
         let currentTrackIndex = 0;
         let isPlaying = false;
         let playlist = [];
-        let visualizerAnimation = null;
+        let currentTrackType = 'url';
         
         // DOM elements
         const musicContainer = document.getElementById('musicContainer');
         const playlistSidebar = document.getElementById('playlistSidebar');
         const playlistTracks = document.getElementById('playlistTracks');
         const trackUrlInput = document.getElementById('trackUrl');
+        const trackEmbedInput = document.getElementById('trackEmbed');
+        const volumeSlider = document.getElementById('volumeSlider');
         const nowPlayingText = document.getElementById('nowPlayingText');
         const navDots = document.getElementById('navDots');
         
-        // Sample tracks with REAL audio URLs
+        // Sample tracks com tipos diferentes
         const sampleTracks = [
             {
                 id: 1,
+                type: 'audio',
                 title: "Lo-fi Chill",
                 artist: "Lofi Producer",
                 album: "Study Beats",
                 artwork: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop",
                 duration: "2:45",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                platform: "native"
             },
             {
                 id: 2,
+                type: 'embed',
+                title: "The Fate of Ophelia",
+                artist: "Taylor Swift",
+                album: "Midnights (Special Edition)",
+                artwork: "https://i.scdn.co/image/ab67616d00001e028c8b428e50c733b1a6fdcf16ac8ca3c6f3e7b43a",
+                duration: "3:45",
+                embedCode: `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1787436246&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`,
+                platform: "soundcloud"
+            },
+            {
+                id: 3,
+                type: 'audio',
                 title: "Jazz Vibes",
                 artist: "Jazz Ensemble",
                 album: "Coffee Shop Sessions",
                 artwork: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&h=400&fit=crop",
                 duration: "3:20",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
+                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                platform: "native"
             },
             {
-                id: 3,
-                title: "Electronic Dreams",
-                artist: "Synth Wave",
-                album: "Neon Nights",
-                artwork: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=400&fit=crop",
-                duration: "4:15",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+                id: 4,
+                type: 'embed',
+                title: "Blinding Lights",
+                artist: "The Weeknd",
+                album: "After Hours",
+                artwork: "https://i.scdn.co/image/ab67616d00001e028086e2e00702709e3f44e574",
+                duration: "3:22",
+                embedCode: `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/0VjIjW4GlUZAMYd2vXMi3b?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`,
+                platform: "spotify"
             }
         ];
         
@@ -645,6 +836,24 @@
             currentAudio.addEventListener('ended', playNext);
             currentAudio.addEventListener('loadedmetadata', updateDurationDisplay);
             currentAudio.addEventListener('error', handleAudioError);
+            
+            // Volume control
+            volumeSlider.addEventListener('input', (e) => {
+                currentAudio.volume = e.target.value / 100;
+            });
+        }
+        
+        // Select input type
+        function selectType(type) {
+            currentTrackType = type;
+            
+            // Update buttons
+            document.getElementById('typeUrl').classList.toggle('active', type === 'url');
+            document.getElementById('typeEmbed').classList.toggle('active', type === 'embed');
+            
+            // Show/hide inputs
+            document.getElementById('urlInputGroup').style.display = type === 'url' ? 'block' : 'none';
+            document.getElementById('embedInputGroup').style.display = type === 'embed' ? 'block' : 'none';
         }
         
         // Render tracks in main container
@@ -663,48 +872,87 @@
             trackElement.className = 'music-track';
             trackElement.dataset.id = track.id;
             trackElement.dataset.index = index;
+            trackElement.dataset.type = track.type;
             
-            trackElement.innerHTML = `
-                <div class="track-wrapper">
-                    <div class="player-container">
-                        <div class="track-info">
-                            <div class="track-artwork">
-                                <img src="${track.artwork}" alt="${track.title}" 
-                                     onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'">
-                            </div>
-                            <h1 class="track-title">${track.title}</h1>
-                            <p class="track-artist">${track.artist}</p>
-                            <p class="track-album">${track.album}</p>
-                        </div>
-                        
-                        <div class="player-controls">
-                            <div class="progress-container" onclick="seekTrack(event)">
-                                <div class="progress-bar" id="progress-${track.id}"></div>
-                            </div>
-                            <div class="time-display">
-                                <span id="currentTime">0:00</span>
-                                <span id="duration">${track.duration}</span>
+            if (track.type === 'audio') {
+                trackElement.innerHTML = `
+                    <div class="track-wrapper">
+                        <div class="player-container">
+                            <div class="track-info">
+                                <div class="track-artwork">
+                                    <img src="${track.artwork}" alt="${track.title}" 
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'">
+                                </div>
+                                <h1 class="track-title">${track.title}</h1>
+                                <p class="track-artist">${track.artist}</p>
+                                <p class="track-album">${track.album}</p>
+                                <span class="track-platform">${track.platform}</span>
                             </div>
                             
-                            <div class="control-buttons">
-                                <button class="control-btn" onclick="playPrev()">
-                                    <i class="fas fa-step-backward"></i>
-                                </button>
-                                <button class="control-btn play-btn" id="playBtn" onclick="togglePlayPause()">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                                <button class="control-btn" onclick="playNext()">
-                                    <i class="fas fa-step-forward"></i>
-                                </button>
-                            </div>
-                            
-                            <div class="audio-visualizer" id="visualizer">
-                                ${Array.from({length: 40}, () => '<div class="visualizer-bar"></div>').join('')}
+                            <div class="player-controls native-player">
+                                <div class="progress-container" onclick="seekTrack(event)">
+                                    <div class="progress-bar" id="progress-${track.id}"></div>
+                                </div>
+                                <div class="time-display">
+                                    <span id="currentTime">0:00</span>
+                                    <span id="duration">${track.duration}</span>
+                                </div>
+                                
+                                <div class="control-buttons">
+                                    <button class="control-btn" onclick="playPrev()">
+                                        <i class="fas fa-step-backward"></i>
+                                    </button>
+                                    <button class="control-btn play-btn" id="playBtn" onclick="togglePlayPause()">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="control-btn" onclick="playNext()">
+                                        <i class="fas fa-step-forward"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="audio-visualizer" id="visualizer">
+                                    ${Array.from({length: 40}, () => '<div class="visualizer-bar"></div>').join('')}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (track.type === 'embed') {
+                trackElement.innerHTML = `
+                    <div class="track-wrapper">
+                        <div class="player-container">
+                            <div class="track-info">
+                                <div class="track-artwork">
+                                    <img src="${track.artwork}" alt="${track.title}" 
+                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'">
+                                </div>
+                                <h1 class="track-title">${track.title}</h1>
+                                <p class="track-artist">${track.artist}</p>
+                                <p class="track-album">${track.album}</p>
+                                <span class="track-platform">${track.platform}</span>
+                            </div>
+                            
+                            <div class="embed-player">
+                                <div class="embed-container" id="embed-${track.id}">
+                                    ${track.embedCode}
+                                </div>
+                                
+                                <div class="control-buttons">
+                                    <button class="control-btn" onclick="playPrev()">
+                                        <i class="fas fa-step-backward"></i>
+                                    </button>
+                                    <button class="control-btn" onclick="toggleEmbedPlay(${track.id})">
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="control-btn" onclick="playNext()">
+                                        <i class="fas fa-step-forward"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
             
             return trackElement;
         }
@@ -730,10 +978,14 @@
                 <div class="playlist-track-artwork">
                     <img src="${track.artwork}" alt="${track.title}"
                          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop'">
+                    <div class="platform-badge ${track.platform}">
+                        <i class="fas fa-${getPlatformIcon(track.platform)}"></i>
+                    </div>
                 </div>
                 <div class="playlist-track-info">
                     <div class="playlist-track-title">${track.title}</div>
                     <div class="playlist-track-artist">${track.artist}</div>
+                    <div class="playlist-track-platform">${track.platform} • ${track.type}</div>
                 </div>
                 <div class="playlist-track-duration">${track.duration}</div>
                 <button class="remove-track" onclick="removeTrack(${track.id}, event)">
@@ -742,6 +994,17 @@
             `;
             
             return trackElement;
+        }
+        
+        // Get platform icon
+        function getPlatformIcon(platform) {
+            switch(platform) {
+                case 'soundcloud': return 'cloud';
+                case 'spotify': return 'spotify';
+                case 'youtube': return 'youtube';
+                case 'native': return 'music';
+                default: return 'headphones';
+            }
         }
         
         // Create navigation dots
@@ -761,27 +1024,69 @@
             if (index < 0 || index >= playlist.length) return;
             
             // Stop current audio
-            if (isPlaying) {
+            if (isPlaying && playlist[currentTrackIndex].type === 'audio') {
                 currentAudio.pause();
-                stopVisualizer();
             }
             
             // Update current track index
             currentTrackIndex = index;
             const track = playlist[currentTrackIndex];
             
-            // Set audio source
-            currentAudio.src = track.audioUrl;
+            // Update UI
+            updateNowPlaying();
+            updateActiveTrack();
+            updateNavDots();
             
+            // Scroll to track
+            const trackElements = document.querySelectorAll('.music-track');
+            if (trackElements[index]) {
+                trackElements[index].scrollIntoView({ behavior: 'smooth' });
+            }
+            
+            // Hide/show player types
+            document.querySelectorAll('.music-track').forEach(t => {
+                const nativePlayer = t.querySelector('.native-player');
+                const embedPlayer = t.querySelector('.embed-player');
+                
+                if (nativePlayer) nativePlayer.style.display = 'none';
+                if (embedPlayer) embedPlayer.style.display = 'none';
+            });
+            
+            // Show appropriate player for current track
+            const currentTrackElement = trackElements[currentTrackIndex];
+            if (track.type === 'audio') {
+                // Play audio track
+                await playAudioTrack(track);
+                const nativePlayer = currentTrackElement.querySelector('.native-player');
+                if (nativePlayer) nativePlayer.style.display = 'block';
+            } else if (track.type === 'embed') {
+                // Show embed player
+                const embedPlayer = currentTrackElement.querySelector('.embed-player');
+                if (embedPlayer) embedPlayer.style.display = 'block';
+                
+                // Auto-play embed if it's SoundCloud
+                if (track.platform === 'soundcloud') {
+                    setTimeout(() => {
+                        const iframe = currentTrackElement.querySelector('iframe');
+                        if (iframe && iframe.contentWindow) {
+                            iframe.contentWindow.postMessage(JSON.stringify({
+                                method: 'play'
+                            }), 'https://w.soundcloud.com');
+                        }
+                    }, 1000);
+                }
+            }
+        }
+        
+        // Play audio track
+        async function playAudioTrack(track) {
             try {
-                // Load and play audio
+                // Set audio source
+                currentAudio.src = track.audioUrl;
+                
+                // Load and play
                 await currentAudio.load();
                 await currentAudio.play();
-                
-                // Update UI
-                updateNowPlaying();
-                updateActiveTrack();
-                updateNavDots();
                 
                 // Update play button
                 const playBtn = document.getElementById('playBtn');
@@ -791,15 +1096,6 @@
                 
                 isPlaying = true;
                 
-                // Start audio visualization
-                startVisualizer();
-                
-                // Scroll to track
-                const trackElements = document.querySelectorAll('.music-track');
-                if (trackElements[index]) {
-                    trackElements[index].scrollIntoView({ behavior: 'smooth' });
-                }
-                
                 console.log(`🎵 Tocando: ${track.title} - ${track.artist}`);
                 
             } catch (error) {
@@ -808,9 +1104,24 @@
             }
         }
         
-        // Toggle play/pause
+        // Toggle embed play
+        function toggleEmbedPlay(trackId) {
+            const track = playlist.find(t => t.id === trackId);
+            if (!track || track.type !== 'embed') return;
+            
+            const trackElement = document.querySelector(`[data-id="${trackId}"]`);
+            const iframe = trackElement.querySelector('iframe');
+            
+            if (iframe && iframe.contentWindow) {
+                iframe.contentWindow.postMessage(JSON.stringify({
+                    method: 'toggle'
+                }), '*');
+            }
+        }
+        
+        // Toggle play/pause for audio
         function togglePlayPause() {
-            if (!playlist.length) return;
+            if (!playlist.length || playlist[currentTrackIndex].type !== 'audio') return;
             
             if (isPlaying) {
                 currentAudio.pause();
@@ -818,7 +1129,6 @@
                 if (playBtn) {
                     playBtn.innerHTML = '<i class="fas fa-play"></i>';
                 }
-                stopVisualizer();
             } else {
                 if (currentAudio.src) {
                     currentAudio.play();
@@ -826,7 +1136,6 @@
                     if (playBtn) {
                         playBtn.innerHTML = '<i class="fas fa-pause"></i>';
                     }
-                    startVisualizer();
                 } else {
                     playTrack(currentTrackIndex);
                 }
@@ -850,10 +1159,10 @@
         // Update progress bar
         function updateProgress() {
             const track = playlist[currentTrackIndex];
-            if (!track) return;
+            if (!track || track.type !== 'audio') return;
             
             const currentTime = currentAudio.currentTime;
-            const duration = currentAudio.duration || parseInt(track.duration.split(':')[0]) * 60 + parseInt(track.duration.split(':')[1]) || 180;
+            const duration = currentAudio.duration || 180;
             const progress = (currentTime / duration) * 100;
             
             // Update progress bar
@@ -873,6 +1182,9 @@
         
         // Update duration display
         function updateDurationDisplay() {
+            const track = playlist[currentTrackIndex];
+            if (!track || track.type !== 'audio') return;
+            
             const duration = currentAudio.duration;
             const durationDisplay = document.getElementById('duration');
             
@@ -885,7 +1197,8 @@
         
         // Seek in track
         function seekTrack(event) {
-            if (!currentAudio.duration) return;
+            const track = playlist[currentTrackIndex];
+            if (!track || track.type !== 'audio' || !currentAudio.duration) return;
             
             const progressContainer = event.currentTarget;
             const rect = progressContainer.getBoundingClientRect();
@@ -894,65 +1207,6 @@
             
             // Seek audio
             currentAudio.currentTime = percentage * currentAudio.duration;
-        }
-        
-        // Start audio visualization
-        function startVisualizer() {
-            if (visualizerAnimation) {
-                stopVisualizer();
-            }
-            
-            // Create audio context if not exists
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioContext.createAnalyser();
-                source = audioContext.createMediaElementSource(currentAudio);
-                
-                analyser.fftSize = 256;
-                source.connect(analyser);
-                analyser.connect(audioContext.destination);
-            }
-            
-            // Resume audio context
-            if (audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-            
-            // Start visualization
-            visualizeAudio();
-        }
-        
-        // Stop audio visualization
-        function stopVisualizer() {
-            if (visualizerAnimation) {
-                cancelAnimationFrame(visualizerAnimation);
-                visualizerAnimation = null;
-            }
-        }
-        
-        // Visualize audio
-        function visualizeAudio() {
-            if (!analyser) return;
-            
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
-            
-            function draw() {
-                visualizerAnimation = requestAnimationFrame(draw);
-                analyser.getByteFrequencyData(dataArray);
-                
-                const visualizer = document.getElementById('visualizer');
-                if (!visualizer) return;
-                
-                const bars = visualizer.querySelectorAll('.visualizer-bar');
-                bars.forEach((bar, i) => {
-                    const barIndex = Math.floor(i * bufferLength / bars.length);
-                    const height = (dataArray[barIndex] / 255) * 100;
-                    bar.style.height = `${Math.max(10, height)}%`;
-                });
-            }
-            
-            draw();
         }
         
         // Handle audio errors
@@ -987,31 +1241,88 @@
             }
         }
         
-        // Add track from URL
-        function addTrackFromUrl() {
-            const url = trackUrlInput.value.trim();
+        // Add track from input
+        function addTrack() {
+            let trackData = {};
+            let platform = 'custom';
             
-            if (!url) {
-                alert('Por favor, cole uma URL de áudio!');
-                return;
-            }
-            
-            // Test if URL is valid audio
-            if (!url.match(/\.(mp3|wav|ogg|m4a|flac|webm)$/i) && !url.includes('youtube.com') && !url.includes('youtu.be')) {
-                if (!confirm('Esta URL não parece ser um arquivo de áudio direto. Deseja continuar?')) {
+            if (currentTrackType === 'url') {
+                const url = trackUrlInput.value.trim();
+                
+                if (!url) {
+                    alert('Por favor, cole uma URL de áudio!');
                     return;
                 }
+                
+                // Detect platform from URL
+                if (url.includes('soundcloud.com')) {
+                    platform = 'soundcloud';
+                    trackData = {
+                        type: 'embed',
+                        embedCode: createSoundCloudEmbed(url)
+                    };
+                } else if (url.includes('spotify.com')) {
+                    platform = 'spotify';
+                    trackData = {
+                        type: 'embed',
+                        embedCode: createSpotifyEmbed(url)
+                    };
+                } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+                    platform = 'youtube';
+                    trackData = {
+                        type: 'embed',
+                        embedCode: createYouTubeEmbed(url)
+                    };
+                } else {
+                    platform = 'native';
+                    trackData = {
+                        type: 'audio',
+                        audioUrl: url
+                    };
+                }
+                
+            } else if (currentTrackType === 'embed') {
+                const embedCode = trackEmbedInput.value.trim();
+                
+                if (!embedCode) {
+                    alert('Por favor, cole um código embed!');
+                    return;
+                }
+                
+                // Detect platform from embed code
+                if (embedCode.includes('soundcloud.com')) {
+                    platform = 'soundcloud';
+                } else if (embedCode.includes('spotify.com')) {
+                    platform = 'spotify';
+                } else if (embedCode.includes('youtube.com') || embedCode.includes('youtu.be')) {
+                    platform = 'youtube';
+                }
+                
+                trackData = {
+                    type: 'embed',
+                    embedCode: embedCode
+                };
             }
+            
+            // Get track info from user
+            const title = prompt('Título da música:', 'Nova Música') || 'Nova Música';
+            const artist = prompt('Nome do artista:', 'Artista Desconhecido') || 'Artista Desconhecido';
+            const album = prompt('Álbum (opcional):', 'Single') || 'Single';
+            const duration = prompt('Duração (ex: 3:45):', '3:45') || '3:45';
+            const artwork = prompt('URL da capa (opcional):', 
+                'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop') || 
+                'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop';
             
             // Create new track
             const newTrack = {
                 id: Date.now(),
-                title: prompt('Título da música:', 'Nova Música') || 'Nova Música',
-                artist: prompt('Nome do artista:', 'Artista Desconhecido') || 'Artista Desconhecido',
-                album: prompt('Álbum (opcional):', 'Single') || 'Single',
-                artwork: prompt('URL da capa (opcional):', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop') || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
-                duration: prompt('Duração (ex: 3:45):', '3:45') || '3:45',
-                audioUrl: url
+                ...trackData,
+                title: title,
+                artist: artist,
+                album: album,
+                artwork: artwork,
+                duration: duration,
+                platform: platform
             };
             
             // Add to playlist
@@ -1027,8 +1338,9 @@
             // Update navigation dots
             createNavDots();
             
-            // Clear input
+            // Clear inputs
             trackUrlInput.value = '';
+            trackEmbedInput.value = '';
             
             // Show success message
             alert('Música adicionada à playlist!');
@@ -1037,6 +1349,37 @@
             if (playlist.length === 1) {
                 playTrack(0);
             }
+        }
+        
+        // Create SoundCloud embed from URL
+        function createSoundCloudEmbed(url) {
+            // Extract track ID from URL
+            const trackId = url.split('/').pop();
+            return `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackId}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
+        }
+        
+        // Create Spotify embed from URL
+        function createSpotifyEmbed(url) {
+            // Extract track ID from URL
+            const trackId = url.split('/').pop();
+            return `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+        
+        // Create YouTube embed from URL
+        function createYouTubeEmbed(url) {
+            // Extract video ID from URL
+            let videoId = '';
+            if (url.includes('youtube.com/watch?v=')) {
+                videoId = url.split('v=')[1].split('&')[0];
+            } else if (url.includes('youtu.be/')) {
+                videoId = url.split('youtu.be/')[1].split('?')[0];
+            }
+            
+            if (videoId) {
+                return `<iframe width="100%" height="166" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            }
+            
+            return `<iframe width="100%" height="166" src="${url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         }
         
         // Handle audio file upload
@@ -1055,7 +1398,7 @@
                 const audioUrl = URL.createObjectURL(file);
                 
                 // Extract metadata from filename
-                const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+                const fileName = file.name.replace(/\.[^/.]+$/, "");
                 const [artist, title] = fileName.split(' - ').length >= 2 ? 
                     [fileName.split(' - ')[0], fileName.split(' - ')[1]] : 
                     ['Artista Desconhecido', fileName];
@@ -1063,12 +1406,14 @@
                 // Create new track
                 const newTrack = {
                     id: Date.now() + i,
+                    type: 'audio',
                     title: title,
                     artist: artist,
                     album: 'Upload',
                     artwork: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
                     duration: '?:??',
-                    audioUrl: audioUrl
+                    audioUrl: audioUrl,
+                    platform: 'native'
                 };
                 
                 // Add to playlist
@@ -1100,15 +1445,16 @@
             if (trackIndex === -1) return;
             
             // If removing currently playing track
-            if (trackIndex === currentTrackIndex && isPlaying) {
-                currentAudio.pause();
-                stopVisualizer();
-                isPlaying = false;
+            if (trackIndex === currentTrackIndex) {
+                if (playlist[trackIndex].type === 'audio' && isPlaying) {
+                    currentAudio.pause();
+                    isPlaying = false;
+                }
             }
             
             // Revoke object URL if it's an uploaded file
             const track = playlist[trackIndex];
-            if (track.audioUrl.startsWith('blob:')) {
+            if (track.type === 'audio' && track.audioUrl.startsWith('blob:')) {
                 URL.revokeObjectURL(track.audioUrl);
             }
             
@@ -1167,7 +1513,9 @@
             switch(e.key) {
                 case ' ':
                     e.preventDefault();
-                    togglePlayPause();
+                    if (playlist[currentTrackIndex]?.type === 'audio') {
+                        togglePlayPause();
+                    }
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
@@ -1187,20 +1535,9 @@
             }
         });
         
-        // Auto-play permission for mobile
-        document.addEventListener('click', () => {
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume();
-            }
-        });
-        
-        console.log('🎵 SoundScroll Player REAL iniciado!');
-        console.log('🔊 Agora COM SOM REAL!');
-        console.log('🎹 Atalhos:');
-        console.log('- Espaço: Play/Pause');
-        console.log('- Setas ↑↓: Música anterior/próxima');
-        console.log('- P: Abrir/fechar playlist');
-        console.log('- Esc: Fechar playlist');
+        console.log('🎵 SoundScroll Player HÍBRIDO iniciado!');
+        console.log('🔊 Suporte a Áudio Nativo + Embeds!');
+        console.log('📋 Plataformas: MP3, SoundCloud, Spotify, YouTube, Upload');
     </script>
 </body>
 </html>
