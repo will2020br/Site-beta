@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Style - Video Scroll</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            color: white;
+            overflow: hidden;
+        }
+        
+        .video-container {
+            height: 100vh;
+            scroll-snap-type: y mandatory;
+            overflow-y: scroll;
+        }
+        
+        .video-item {
+            height: 100vh;
+            width: 100%;
+            scroll-snap-align: start;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .video-player {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .video-overlay {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            right: 20px;
+            z-index: 2;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .user-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid white;
+            margin-right: 10px;
+        }
+        
+        .username {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        
+        .video-caption {
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.4;
+        }
+        
+        .video-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .side-buttons {
+            position: absolute;
+            right: 20px;
+            bottom: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .icon-btn i {
+            font-size: 28px;
+            margin-bottom: 5px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 50%;
+            padding: 8px;
+        }
+        
+        .icon-btn span {
+            font-size: 12px;
+        }
+        
+        /* Barra de navegação superior */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.5), transparent);
+            z-index: 100;
+        }
+        
+        .nav-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Scrollbar personalizada */
+        .video-container::-webkit-scrollbar {
+            width: 0;
+            background: transparent;
+        }
+        
+        /* Indicador de vídeo ativo */
+        .active-indicator {
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 3;
+        }
+        
+        .indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            transition: all 0.3s;
+        }
+        
+        .indicator-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Barra de navegação -->
+    <nav class="navbar">
+        <button class="nav-btn">Seguindo</button>
+        <button class="nav-btn">Para Você</button>
+        <button class="nav-btn"><i class="fas fa-search"></i></button>
+    </nav>
+    
+    <!-- Container principal dos vídeos -->
+    <div class="video-container" id="videoContainer">
+        <!-- Os vídeos serão inseridos aqui via JavaScript -->
+    </div>
+    
+    <!-- Indicador de vídeo ativo -->
+    <div class="active-indicator" id="activeIndicator"></div>
+
+    <script>
+        // Dados de exemplo dos vídeos
+        const videos = [
+            {
+                id: 1,
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-teenage-girl-listening-to-music-on-her-phone-while-4456-large.mp4",
+                username: "@usuario1",
+                avatar: "https://i.pravatar.cc/150?img=1",
+                caption: "Primeiro vídeo de teste! 🎬 #demo",
+                likes: "125K",
+                comments: "2.3K",
+                shares: "850"
+            },
+            {
+                id: 2,
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-going-down-a-curved-highway-on-a-rainy-day-34527-large.mp4",
+                username: "@viajante",
+                avatar: "https://i.pravatar.cc/150?img=5",
+                caption: "Paisagem incrível durante a viagem 🌄",
+                likes: "89K",
+                comments: "1.5K",
+                shares: "420"
+            },
+            {
+                id: 3,
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4",
+                username: "@artista",
+                avatar: "https://i.pravatar.cc/150?img=8",
+                caption: "Efeitos de luz neon são incríveis! ✨",
+                likes: "250K",
+                comments: "5.2K",
+                shares: "1.2K"
+            },
+            {
+                id: 4,
+                videoUrl: "https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-woman-playing-with-yarn-3985-large.mp4",
+                username: "@criativa",
+                avatar: "https://i.pravatar.cc/150?img=11",
+                caption: "Trabalho manual relaxante 🧶",
+                likes: "45K",
+                comments: "980",
+                shares: "310"
+            }
+        ];
+        
+        const videoContainer = document.getElementById('videoContainer');
+        const activeIndicator = document.getElementById('activeIndicator');
+        
+        // Criar indicadores
+        videos.forEach((video, index) => {
+            const dot = document.createElement('div');
+            dot.className = 'indicator-dot';
+            dot.dataset.index = index;
+            activeIndicator.appendChild(dot);
+        });
+        
+        // Criar elementos de vídeo
+        videos.forEach((video, index) => {
+            const videoItem = document.createElement('div');
+            videoItem.className = 'video-item';
+            videoItem.dataset.id = video.id;
+            
+            videoItem.innerHTML = `
+                <video class="video-player" loop muted playsinline>
+                    <source src="${video.videoUrl}" type="video/mp4">
+                    Seu navegador não suporta vídeos HTML5.
+                </video>
+                
+                <div class="video-overlay">
+                    <div class="user-info">
+                        <img src="${video.avatar}" alt="${video.username}" class="user-avatar">
+                        <span class="username">${video.username}</span>
+                    </div>
+                    <p class="video-caption">${video.caption}</p>
+                    <div class="video-stats">
+                        <span><i class="fas fa-music"></i> Som original</span>
+                        <span><i class="far fa-eye"></i> ${video.likes} visualizações</span>
+                    </div>
+                </div>
+                
+                <div class="side-buttons">
+                    <button class="icon-btn" onclick="toggleLike(this)">
+                        <i class="far fa-heart"></i>
+                        <span id="likes-${video.id}">${video.likes}</span>
+                    </button>
+                    <button class="icon-btn" onclick="toggleComment()">
+                        <i class="far fa-comment"></i>
+                        <span>${video.comments}</span>
+                    </button>
+                    <button class="icon-btn" onclick="shareVideo()">
+                        <i class="far fa-share-square"></i>
+                        <span>${video.shares}</span>
+                    </button>
+                    <button class="icon-btn" onclick="toggleMute(this)">
+                        <i class="fas fa-volume-mute"></i>
+                        <span>Som</span>
+                    </button>
+                </div>
+            `;
+            
+            videoContainer.appendChild(videoItem);
+        });
+        
+        // Controle de vídeo e scroll
+        let currentVideoIndex = 0;
+        const videoPlayers = document.querySelectorAll('.video-player');
+        const indicatorDots = document.querySelectorAll('.indicator-dot');
+        
+        // Atualizar indicador e tocar vídeo visível
+        function updateActiveVideo() {
+            const containerRect = videoContainer.getBoundingClientRect();
+            const videoItems = document.querySelectorAll('.video-item');
+            
+            videoItems.forEach((item, index) => {
+                const rect = item.getBoundingClientRect();
+                const video = item.querySelector('video');
+                
+                // Verificar se o vídeo está visível na tela
+                if (rect.top >= containerRect.top && rect.bottom <= containerRect.bottom) {
+                    currentVideoIndex = index;
+                    video.play();
+                    
+                    // Atualizar indicador
+                    indicatorDots.forEach((dot, dotIndex) => {
+                        dot.classList.toggle('active', dotIndex === index);
+                    });
+                } else {
+                    video.pause();
+                }
+            });
+        }
+        
+        // Event listeners
+        videoContainer.addEventListener('scroll', updateActiveVideo);
+        
+        // Inicializar
+        updateActiveVideo();
+        
+        // Funções dos botões
+        function toggleLike(button) {
+            const icon = button.querySelector('i');
+            const likesSpan = button.querySelector('span');
+            
+            if (icon.classList.contains('far')) {
+                icon.classList.replace('far', 'fas');
+                icon.style.color = '#ff0050';
+                
+                // Incrementar likes (simulação)
+                let currentLikes = likesSpan.textContent;
+                if (currentLikes.includes('K')) {
+                    const num = parseFloat(currentLikes);
+                    likesSpan.textContent = (num + 0.1).toFixed(1) + 'K';
+                }
+            } else {
+                icon.classList.replace('fas', 'far');
+                icon.style.color = 'white';
+            }
+        }
+        
+        function toggleMute(button) {
+            const icon = button.querySelector('i');
+            const video = button.closest('.video-item').querySelector('video');
+            
+            if (video.muted) {
+                video.muted = false;
+                icon.classList.replace('fa-volume-mute', 'fa-volume-up');
+                button.querySelector('span').textContent = 'Som';
+            } else {
+                video.muted = true;
+                icon.classList.replace('fa-volume-up', 'fa-volume-mute');
+                button.querySelector('span').textContent = 'Mudo';
+            }
+        }
+        
+        function toggleComment() {
+            alert('Seção de comentários - Adicione sua própria implementação!');
+        }
+        
+        function shareVideo() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Confira este vídeo!',
+                    text: 'Veja este vídeo no meu app estilo TikTok',
+                    url: window.location.href
+                });
+            } else {
+                alert('Link copiado para a área de transferência!');
+            }
+        }
+        
+        // Play/pause ao clicar no vídeo
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('video-player')) {
+                const video = e.target;
+                if (video.paused) {
+                    video.play();
+                } else {
+                    video.pause();
+                }
+            }
+        });
+        
+        // Atualizar indicador inicial
+        indicatorDots[0].classList.add('active');
+    </script>
+</body>
+</html>
