@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundScroll - Player TikTok de Música</title>
+    <title>SoundScroll - Player TikTok de Música REAL</title>
     <style>
         * {
             margin: 0;
@@ -79,17 +79,6 @@
             object-fit: cover;
         }
         
-        .track-artwork::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(45deg, rgba(255,85,0,0.2), rgba(255,149,0,0.2));
-            border-radius: 15px;
-        }
-        
         .track-title {
             font-size: 24px;
             font-weight: bold;
@@ -102,12 +91,6 @@
             font-size: 16px;
             color: #cccccc;
             margin-bottom: 5px;
-        }
-        
-        .track-album {
-            font-size: 14px;
-            color: #888;
-            font-style: italic;
         }
         
         .player-controls {
@@ -181,38 +164,6 @@
         
         .play-btn:hover {
             box-shadow: 0 5px 20px rgba(255, 85, 0, 0.6);
-        }
-        
-        .volume-control {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 15px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .volume-slider {
-            width: 80px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff5500;
-            cursor: pointer;
         }
         
         /* Playlist Sidebar */
@@ -464,27 +415,51 @@
             box-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
         }
         
-        /* Loading spinner */
-        .loading {
+        /* Audio upload button */
+        .upload-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(45deg, #ff5500, #ff9500);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 25px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 85, 0, 0.6);
+        }
+        
+        .upload-input {
             display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
         }
         
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-top-color: #ff5500;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        /* Audio visualization */
+        .audio-visualizer {
+            width: 100%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            margin-top: 20px;
         }
         
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .visualizer-bar {
+            width: 3px;
+            background: linear-gradient(to top, #ff5500, #ff9500);
+            border-radius: 2px;
+            transition: height 0.1s ease;
         }
         
         /* Hide scrollbar */
@@ -529,6 +504,18 @@
                 width: 150px;
                 height: 150px;
             }
+            
+            .upload-btn {
+                bottom: 80px;
+                left: 50%;
+                transform: translateX(-50%);
+                white-space: nowrap;
+            }
+        }
+        
+        /* Audio player hidden */
+        .hidden-audio {
+            display: none;
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
@@ -545,18 +532,21 @@
         <i class="fas fa-list-music"></i>
     </button>
     
+    <!-- Upload Button -->
+    <button class="upload-btn" onclick="document.getElementById('audioUpload').click()">
+        <i class="fas fa-upload"></i> Upload MP3
+    </button>
+    <input type="file" id="audioUpload" class="upload-input" accept="audio/*" multiple onchange="handleAudioUpload(event)">
+    
     <!-- Navigation Dots -->
     <div class="nav-dots" id="navDots"></div>
+    
+    <!-- Main Audio Player (Hidden) -->
+    <audio id="mainAudioPlayer" class="hidden-audio" preload="metadata"></audio>
     
     <!-- Music Container -->
     <div class="music-container" id="musicContainer">
         <!-- Tracks will be loaded here -->
-    </div>
-    
-    <!-- Volume Control -->
-    <div class="volume-control">
-        <i class="fas fa-volume-up" style="color: #ff5500;"></i>
-        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
     </div>
     
     <!-- Playlist Sidebar -->
@@ -570,7 +560,7 @@
         
         <div class="add-track-form">
             <input type="text" class="url-input" id="trackUrl" 
-                   placeholder="Cole o link da música (SoundCloud, YouTube, etc)...">
+                   placeholder="Cole URL de áudio MP3 direto ou link do YouTube...">
             <button class="add-btn" onclick="addTrackFromUrl()">
                 <i class="fas fa-plus"></i> Adicionar à Playlist
             </button>
@@ -583,77 +573,78 @@
 
     <script>
         // Player state
-        let currentPlayer = null;
+        let currentAudio = document.getElementById('mainAudioPlayer');
+        let audioContext = null;
+        let analyser = null;
+        let source = null;
         let currentTrackIndex = 0;
         let isPlaying = false;
         let playlist = [];
+        let visualizerAnimation = null;
         
         // DOM elements
         const musicContainer = document.getElementById('musicContainer');
         const playlistSidebar = document.getElementById('playlistSidebar');
         const playlistTracks = document.getElementById('playlistTracks');
         const trackUrlInput = document.getElementById('trackUrl');
-        const volumeSlider = document.getElementById('volumeSlider');
         const nowPlayingText = document.getElementById('nowPlayingText');
         const navDots = document.getElementById('navDots');
         
-        // Initialize with sample tracks
+        // Sample tracks with REAL audio URLs
         const sampleTracks = [
             {
                 id: 1,
-                title: "The Fate of Ophelia",
-                artist: "Taylor Swift",
-                album: "Midnights (Special Edition)",
-                artwork: "https://i.scdn.co/image/ab67616d00001e028c8b428e50c733b1a6fdcf16ac8ca3c6f3e7b43a",
-                duration: "3:45",
-                source: "soundcloud",
-                url: "https://soundcloud.com/aka-716226817/taylor-swift-the-fate-of"
+                title: "Lo-fi Chill",
+                artist: "Lofi Producer",
+                album: "Study Beats",
+                artwork: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop",
+                duration: "2:45",
+                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
             },
             {
                 id: 2,
-                title: "Blinding Lights",
-                artist: "The Weeknd",
-                album: "After Hours",
-                artwork: "https://i.scdn.co/image/ab67616d00001e028086e2e00702709e3f44e574",
-                duration: "3:22",
-                source: "spotify",
-                url: "https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"
+                title: "Jazz Vibes",
+                artist: "Jazz Ensemble",
+                album: "Coffee Shop Sessions",
+                artwork: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&h=400&fit=crop",
+                duration: "3:20",
+                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3"
             },
             {
                 id: 3,
-                title: "good 4 u",
-                artist: "Olivia Rodrigo",
-                album: "SOUR",
-                artwork: "https://i.scdn.co/image/ab67616d00001e02e1c6db44c6d44e86b8bff8c0",
-                duration: "2:58",
-                source: "youtube",
-                url: "https://www.youtube.com/watch?v=gNi_6U5Pm_o"
-            },
-            {
-                id: 4,
-                title: "Levitating",
-                artist: "Dua Lipa",
-                album: "Future Nostalgia",
-                artwork: "https://i.scdn.co/image/ab67616d00001e02f907de96b9a4fbc04accc0d5",
-                duration: "3:24",
-                source: "soundcloud",
-                url: "https://soundcloud.com/dualipa/levitating"
+                title: "Electronic Dreams",
+                artist: "Synth Wave",
+                album: "Neon Nights",
+                artwork: "https://images.unsplash.com/photo-1516280440614-37939bbacd81?w=400&h=400&fit=crop",
+                duration: "4:15",
+                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
             }
         ];
         
         // Initialize player
         function initPlayer() {
-            // Load sample tracks to playlist
+            // Load sample tracks
             playlist = [...sampleTracks];
             renderPlaylist();
             renderTracks();
             createNavDots();
             updateNowPlaying();
             
+            // Setup audio event listeners
+            setupAudioEvents();
+            
             // Auto-play first track
             setTimeout(() => {
                 playTrack(0);
             }, 1000);
+        }
+        
+        // Setup audio event listeners
+        function setupAudioEvents() {
+            currentAudio.addEventListener('timeupdate', updateProgress);
+            currentAudio.addEventListener('ended', playNext);
+            currentAudio.addEventListener('loadedmetadata', updateDurationDisplay);
+            currentAudio.addEventListener('error', handleAudioError);
         }
         
         // Render tracks in main container
@@ -687,24 +678,28 @@
                         </div>
                         
                         <div class="player-controls">
-                            <div class="progress-container" onclick="seekTrack(event, ${track.id})">
+                            <div class="progress-container" onclick="seekTrack(event)">
                                 <div class="progress-bar" id="progress-${track.id}"></div>
                             </div>
                             <div class="time-display">
-                                <span id="currentTime-${track.id}">0:00</span>
-                                <span id="duration-${track.id}">${track.duration}</span>
+                                <span id="currentTime">0:00</span>
+                                <span id="duration">${track.duration}</span>
                             </div>
                             
                             <div class="control-buttons">
                                 <button class="control-btn" onclick="playPrev()">
                                     <i class="fas fa-step-backward"></i>
                                 </button>
-                                <button class="control-btn play-btn" id="playBtn-${track.id}" onclick="togglePlayPause(${track.id})">
+                                <button class="control-btn play-btn" id="playBtn" onclick="togglePlayPause()">
                                     <i class="fas fa-play"></i>
                                 </button>
                                 <button class="control-btn" onclick="playNext()">
                                     <i class="fas fa-step-forward"></i>
                                 </button>
+                            </div>
+                            
+                            <div class="audio-visualizer" id="visualizer">
+                                ${Array.from({length: 40}, () => '<div class="visualizer-bar"></div>').join('')}
                             </div>
                         </div>
                     </div>
@@ -762,108 +757,82 @@
         }
         
         // Play a specific track
-        function playTrack(index) {
+        async function playTrack(index) {
             if (index < 0 || index >= playlist.length) return;
+            
+            // Stop current audio
+            if (isPlaying) {
+                currentAudio.pause();
+                stopVisualizer();
+            }
             
             // Update current track index
             currentTrackIndex = index;
-            
-            // Scroll to track
-            const trackElements = document.querySelectorAll('.music-track');
-            if (trackElements[index]) {
-                trackElements[index].scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            // Update UI
-            updateNowPlaying();
-            updateActiveTrack();
-            updateNavDots();
-            
-            // Play the track (simulated)
-            simulatePlayback();
-        }
-        
-        // Simulate audio playback (for demo)
-        function simulatePlayback() {
             const track = playlist[currentTrackIndex];
             
-            // Update play button
-            const playBtn = document.getElementById(`playBtn-${track.id}`);
-            if (playBtn) {
-                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                isPlaying = true;
-            }
+            // Set audio source
+            currentAudio.src = track.audioUrl;
             
-            // Start progress simulation
-            startProgressSimulation(track.id);
-            
-            // Update now playing text
-            nowPlayingText.textContent = `${track.artist} - ${track.title}`;
-            
-            // Simulate audio source based on platform
-            console.log(`Playing: ${track.title} from ${track.source} - ${track.url}`);
-        }
-        
-        // Start progress bar simulation
-        function startProgressSimulation(trackId) {
-            const progressBar = document.getElementById(`progress-${trackId}`);
-            const currentTime = document.getElementById(`currentTime-${trackId}`);
-            
-            if (!progressBar || !currentTime) return;
-            
-            // Reset progress
-            progressBar.style.width = '0%';
-            currentTime.textContent = '0:00';
-            
-            // Simulate playback progress
-            let progress = 0;
-            const interval = setInterval(() => {
-                if (!isPlaying) {
-                    clearInterval(interval);
-                    return;
+            try {
+                // Load and play audio
+                await currentAudio.load();
+                await currentAudio.play();
+                
+                // Update UI
+                updateNowPlaying();
+                updateActiveTrack();
+                updateNavDots();
+                
+                // Update play button
+                const playBtn = document.getElementById('playBtn');
+                if (playBtn) {
+                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
                 }
                 
-                progress += 0.5;
-                if (progress <= 100) {
-                    progressBar.style.width = `${progress}%`;
-                    
-                    // Update time display (simulated)
-                    const seconds = Math.floor((progress / 100) * 225); // Assuming 3:45 track
-                    const minutes = Math.floor(seconds / 60);
-                    const remainingSeconds = seconds % 60;
-                    currentTime.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-                } else {
-                    clearInterval(interval);
-                    // Auto-play next track when current finishes
-                    playNext();
+                isPlaying = true;
+                
+                // Start audio visualization
+                startVisualizer();
+                
+                // Scroll to track
+                const trackElements = document.querySelectorAll('.music-track');
+                if (trackElements[index]) {
+                    trackElements[index].scrollIntoView({ behavior: 'smooth' });
                 }
-            }, 500);
-            
-            // Store interval ID for cleanup
-            window.currentPlaybackInterval = interval;
+                
+                console.log(`🎵 Tocando: ${track.title} - ${track.artist}`);
+                
+            } catch (error) {
+                console.error('Erro ao tocar áudio:', error);
+                handleAudioError();
+            }
         }
         
         // Toggle play/pause
-        function togglePlayPause(trackId) {
-            const trackIndex = playlist.findIndex(t => t.id === trackId);
+        function togglePlayPause() {
+            if (!playlist.length) return;
             
-            if (trackIndex !== currentTrackIndex) {
-                playTrack(trackIndex);
-                return;
+            if (isPlaying) {
+                currentAudio.pause();
+                const playBtn = document.getElementById('playBtn');
+                if (playBtn) {
+                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
+                stopVisualizer();
+            } else {
+                if (currentAudio.src) {
+                    currentAudio.play();
+                    const playBtn = document.getElementById('playBtn');
+                    if (playBtn) {
+                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                    }
+                    startVisualizer();
+                } else {
+                    playTrack(currentTrackIndex);
+                }
             }
             
             isPlaying = !isPlaying;
-            const playBtn = document.getElementById(`playBtn-${trackId}`);
-            
-            if (isPlaying) {
-                playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                startProgressSimulation(trackId);
-            } else {
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                if (window.currentPlaybackInterval) {
-                    clearInterval(window.currentPlaybackInterval);
-                }
-            }
         }
         
         // Play next track
@@ -878,27 +847,122 @@
             playTrack(prevIndex);
         }
         
+        // Update progress bar
+        function updateProgress() {
+            const track = playlist[currentTrackIndex];
+            if (!track) return;
+            
+            const currentTime = currentAudio.currentTime;
+            const duration = currentAudio.duration || parseInt(track.duration.split(':')[0]) * 60 + parseInt(track.duration.split(':')[1]) || 180;
+            const progress = (currentTime / duration) * 100;
+            
+            // Update progress bar
+            const progressBar = document.getElementById(`progress-${track.id}`);
+            if (progressBar) {
+                progressBar.style.width = `${progress}%`;
+            }
+            
+            // Update time display
+            const currentTimeDisplay = document.getElementById('currentTime');
+            if (currentTimeDisplay) {
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                currentTimeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
+        // Update duration display
+        function updateDurationDisplay() {
+            const duration = currentAudio.duration;
+            const durationDisplay = document.getElementById('duration');
+            
+            if (durationDisplay && !isNaN(duration)) {
+                const minutes = Math.floor(duration / 60);
+                const seconds = Math.floor(duration % 60);
+                durationDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }
+        }
+        
         // Seek in track
-        function seekTrack(event, trackId) {
+        function seekTrack(event) {
+            if (!currentAudio.duration) return;
+            
             const progressContainer = event.currentTarget;
             const rect = progressContainer.getBoundingClientRect();
             const clickPosition = event.clientX - rect.left;
-            const percentage = (clickPosition / rect.width) * 100;
+            const percentage = clickPosition / rect.width;
             
-            // Update progress bar
-            const progressBar = document.getElementById(`progress-${trackId}`);
-            if (progressBar) {
-                progressBar.style.width = `${percentage}%`;
-                
-                // Update time display
-                const currentTime = document.getElementById(`currentTime-${trackId}`);
-                if (currentTime) {
-                    const seconds = Math.floor((percentage / 100) * 225);
-                    const minutes = Math.floor(seconds / 60);
-                    const remainingSeconds = seconds % 60;
-                    currentTime.textContent = `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-                }
+            // Seek audio
+            currentAudio.currentTime = percentage * currentAudio.duration;
+        }
+        
+        // Start audio visualization
+        function startVisualizer() {
+            if (visualizerAnimation) {
+                stopVisualizer();
             }
+            
+            // Create audio context if not exists
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                source = audioContext.createMediaElementSource(currentAudio);
+                
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+            }
+            
+            // Resume audio context
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            // Start visualization
+            visualizeAudio();
+        }
+        
+        // Stop audio visualization
+        function stopVisualizer() {
+            if (visualizerAnimation) {
+                cancelAnimationFrame(visualizerAnimation);
+                visualizerAnimation = null;
+            }
+        }
+        
+        // Visualize audio
+        function visualizeAudio() {
+            if (!analyser) return;
+            
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            
+            function draw() {
+                visualizerAnimation = requestAnimationFrame(draw);
+                analyser.getByteFrequencyData(dataArray);
+                
+                const visualizer = document.getElementById('visualizer');
+                if (!visualizer) return;
+                
+                const bars = visualizer.querySelectorAll('.visualizer-bar');
+                bars.forEach((bar, i) => {
+                    const barIndex = Math.floor(i * bufferLength / bars.length);
+                    const height = (dataArray[barIndex] / 255) * 100;
+                    bar.style.height = `${Math.max(10, height)}%`;
+                });
+            }
+            
+            draw();
+        }
+        
+        // Handle audio errors
+        function handleAudioError() {
+            console.error('Erro no áudio');
+            const playBtn = document.getElementById('playBtn');
+            if (playBtn) {
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+            isPlaying = false;
         }
         
         // Update active track in playlist
@@ -928,43 +992,26 @@
             const url = trackUrlInput.value.trim();
             
             if (!url) {
-                alert('Por favor, cole um link de música!');
+                alert('Por favor, cole uma URL de áudio!');
                 return;
             }
             
-            // Parse URL to determine source
-            let source = 'custom';
-            let title = 'Nova Música';
-            let artist = 'Artista Desconhecido';
-            let artwork = 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop';
-            
-            if (url.includes('soundcloud.com')) {
-                source = 'soundcloud';
-                title = 'Música do SoundCloud';
-                artist = 'SoundCloud Artist';
-                artwork = 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400&h=400&fit=crop';
-            } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                source = 'youtube';
-                title = 'Música do YouTube';
-                artist = 'YouTube Artist';
-                artwork = 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop';
-            } else if (url.includes('spotify.com')) {
-                source = 'spotify';
-                title = 'Música do Spotify';
-                artist = 'Spotify Artist';
-                artwork = 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop';
+            // Test if URL is valid audio
+            if (!url.match(/\.(mp3|wav|ogg|m4a|flac|webm)$/i) && !url.includes('youtube.com') && !url.includes('youtu.be')) {
+                if (!confirm('Esta URL não parece ser um arquivo de áudio direto. Deseja continuar?')) {
+                    return;
+                }
             }
             
             // Create new track
             const newTrack = {
-                id: Date.now(), // Unique ID
-                title: prompt('Título da música:', title) || title,
-                artist: prompt('Nome do artista:', artist) || artist,
+                id: Date.now(),
+                title: prompt('Título da música:', 'Nova Música') || 'Nova Música',
+                artist: prompt('Nome do artista:', 'Artista Desconhecido') || 'Artista Desconhecido',
                 album: prompt('Álbum (opcional):', 'Single') || 'Single',
-                artwork: prompt('URL da capa (opcional):', artwork) || artwork,
+                artwork: prompt('URL da capa (opcional):', 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop') || 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
                 duration: prompt('Duração (ex: 3:45):', '3:45') || '3:45',
-                source: source,
-                url: url
+                audioUrl: url
             };
             
             // Add to playlist
@@ -973,24 +1020,76 @@
             // Update UI
             renderPlaylist();
             
-            // Add to main container if it's the first track
-            if (playlist.length === 1) {
-                renderTracks();
-                createNavDots();
-            } else {
-                // Just add the new track to container
-                const trackElement = createTrackElement(newTrack, playlist.length - 1);
-                musicContainer.appendChild(trackElement);
-                
-                // Update navigation dots
-                createNavDots();
-            }
+            // Add to main container
+            const trackElement = createTrackElement(newTrack, playlist.length - 1);
+            musicContainer.appendChild(trackElement);
+            
+            // Update navigation dots
+            createNavDots();
             
             // Clear input
             trackUrlInput.value = '';
             
             // Show success message
             alert('Música adicionada à playlist!');
+            
+            // If this is the first track, play it
+            if (playlist.length === 1) {
+                playTrack(0);
+            }
+        }
+        
+        // Handle audio file upload
+        function handleAudioUpload(event) {
+            const files = event.target.files;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                
+                if (!file.type.startsWith('audio/')) {
+                    alert(`${file.name} não é um arquivo de áudio válido!`);
+                    continue;
+                }
+                
+                // Create object URL for the file
+                const audioUrl = URL.createObjectURL(file);
+                
+                // Extract metadata from filename
+                const fileName = file.name.replace(/\.[^/.]+$/, ""); // Remove extension
+                const [artist, title] = fileName.split(' - ').length >= 2 ? 
+                    [fileName.split(' - ')[0], fileName.split(' - ')[1]] : 
+                    ['Artista Desconhecido', fileName];
+                
+                // Create new track
+                const newTrack = {
+                    id: Date.now() + i,
+                    title: title,
+                    artist: artist,
+                    album: 'Upload',
+                    artwork: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
+                    duration: '?:??',
+                    audioUrl: audioUrl
+                };
+                
+                // Add to playlist
+                playlist.push(newTrack);
+            }
+            
+            // Update UI
+            renderPlaylist();
+            renderTracks();
+            createNavDots();
+            
+            // Reset file input
+            event.target.value = '';
+            
+            // Show success message
+            alert(`${files.length} música(s) adicionada(s) à playlist!`);
+            
+            // If this is the first track, play it
+            if (playlist.length === files.length) {
+                playTrack(0);
+            }
         }
         
         // Remove track from playlist
@@ -1000,10 +1099,23 @@
             const trackIndex = playlist.findIndex(t => t.id === trackId);
             if (trackIndex === -1) return;
             
+            // If removing currently playing track
+            if (trackIndex === currentTrackIndex && isPlaying) {
+                currentAudio.pause();
+                stopVisualizer();
+                isPlaying = false;
+            }
+            
+            // Revoke object URL if it's an uploaded file
+            const track = playlist[trackIndex];
+            if (track.audioUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(track.audioUrl);
+            }
+            
             // Remove from playlist
             playlist.splice(trackIndex, 1);
             
-            // If we removed the current track, play next or previous
+            // Adjust current track index
             if (trackIndex === currentTrackIndex) {
                 if (playlist.length > 0) {
                     playTrack(Math.min(trackIndex, playlist.length - 1));
@@ -1038,28 +1150,24 @@
                 
                 if (rect.top >= containerRect.top && rect.bottom <= containerRect.bottom) {
                     if (currentTrackIndex !== index) {
-                        currentTrackIndex = index;
-                        updateNowPlaying();
-                        updateActiveTrack();
-                        updateNavDots();
+                        playTrack(index);
                     }
                 }
             });
         }
         
-        // Volume control
-        volumeSlider.addEventListener('input', (e) => {
-            const volume = e.target.value;
-            console.log('Volume:', volume + '%');
-        });
+        // Initialize the player
+        initPlayer();
+        
+        // Add scroll listener
+        musicContainer.addEventListener('scroll', handleScroll);
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             switch(e.key) {
                 case ' ':
                     e.preventDefault();
-                    const currentTrack = playlist[currentTrackIndex];
-                    if (currentTrack) togglePlayPause(currentTrack.id);
+                    togglePlayPause();
                     break;
                 case 'ArrowUp':
                     e.preventDefault();
@@ -1079,13 +1187,15 @@
             }
         });
         
-        // Initialize the player
-        initPlayer();
+        // Auto-play permission for mobile
+        document.addEventListener('click', () => {
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+        });
         
-        // Add scroll listener
-        musicContainer.addEventListener('scroll', handleScroll);
-        
-        console.log('🎵 SoundScroll Player iniciado!');
+        console.log('🎵 SoundScroll Player REAL iniciado!');
+        console.log('🔊 Agora COM SOM REAL!');
         console.log('🎹 Atalhos:');
         console.log('- Espaço: Play/Pause');
         console.log('- Setas ↑↓: Música anterior/próxima');
