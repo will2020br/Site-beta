@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundScroll - Player Híbrido TikTok</title>
+    <title>SoundScroll - Seu Player TikTok</title>
     <style>
         * {
             margin: 0;
@@ -201,6 +201,58 @@
             width: 100%;
             height: 100%;
             border: none;
+        }
+        
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .empty-icon {
+            font-size: 80px;
+            color: rgba(255, 85, 0, 0.3);
+            margin-bottom: 30px;
+        }
+        
+        .empty-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: white;
+        }
+        
+        .empty-text {
+            font-size: 16px;
+            color: #aaa;
+            margin-bottom: 30px;
+            max-width: 400px;
+            line-height: 1.6;
+        }
+        
+        .get-started-btn {
+            background: linear-gradient(45deg, #ff5500, #ff9500);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+        
+        .get-started-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 85, 0, 0.4);
         }
         
         /* Volume control */
@@ -577,22 +629,49 @@
             display: none;
         }
         
-        /* Audio visualization */
-        .audio-visualizer {
-            width: 100%;
-            height: 40px;
+        /* Auto-advance indicator */
+        .auto-advance {
+            position: fixed;
+            bottom: 20px;
+            right: 80px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 2px;
-            margin-top: 15px;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            z-index: 100;
         }
         
-        .visualizer-bar {
-            width: 3px;
-            background: linear-gradient(to top, #ff5500, #ff9500);
-            border-radius: 2px;
-            transition: height 0.1s ease;
+        .auto-advance-toggle {
+            position: relative;
+            width: 40px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .auto-advance-toggle.active {
+            background: #ff5500;
+        }
+        
+        .auto-advance-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s;
+        }
+        
+        .auto-advance-toggle.active::after {
+            left: 22px;
         }
         
         /* Hide scrollbar */
@@ -652,30 +731,73 @@
             .volume-control {
                 bottom: 140px;
             }
-        }
-        
-        /* Loading */
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ff5500;
-            font-size: 14px;
+            
+            .auto-advance {
+                bottom: 140px;
+                right: 20px;
+            }
         }
         
         /* Platform colors */
         .soundcloud { background: #ff5500; }
         .youtube { background: #ff0000; }
+        .youtube-music { background: #ff0000; }
         .spotify { background: #1DB954; }
         .native { background: #4285f4; }
         .custom { background: #9c27b0; }
+        .google-drive { background: #34A853; }
+        
+        /* Quick add buttons */
+        .quick-add {
+            position: fixed;
+            bottom: 140px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .quick-add-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            transition: all 0.3s;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        .quick-add-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .quick-add-btn.youtube-music {
+            background: #ff0000;
+        }
+        
+        .quick-add-btn.google-drive {
+            background: #34A853;
+        }
+        
+        .quick-add-btn.soundcloud {
+            background: #ff5500;
+        }
+        
+        .quick-add-btn.spotify {
+            background: #1DB954;
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <!-- Now Playing Indicator -->
-    <div class="now-playing">
+    <div class="now-playing" id="nowPlaying" style="display: none;">
         <div class="now-playing-dot"></div>
         <span id="nowPlayingText">Tocando agora</span>
     </div>
@@ -685,17 +807,39 @@
         <i class="fas fa-list-music"></i>
     </button>
     
+    <!-- Quick Add Buttons -->
+    <div class="quick-add" id="quickAdd" style="display: none;">
+        <button class="quick-add-btn youtube-music" title="YouTube Music" onclick="quickAddPlatform('youtube-music')">
+            <i class="fab fa-youtube"></i>
+        </button>
+        <button class="quick-add-btn google-drive" title="Google Drive" onclick="quickAddPlatform('google-drive')">
+            <i class="fab fa-google-drive"></i>
+        </button>
+        <button class="quick-add-btn soundcloud" title="SoundCloud" onclick="quickAddPlatform('soundcloud')">
+            <i class="fab fa-soundcloud"></i>
+        </button>
+        <button class="quick-add-btn spotify" title="Spotify" onclick="quickAddPlatform('spotify')">
+            <i class="fab fa-spotify"></i>
+        </button>
+    </div>
+    
     <!-- Upload Button -->
     <button class="upload-btn" onclick="document.getElementById('audioUpload').click()">
         <i class="fas fa-upload"></i> Upload MP3
     </button>
     <input type="file" id="audioUpload" class="upload-input" accept="audio/*" multiple onchange="handleAudioUpload(event)">
     
+    <!-- Auto-Advance Toggle -->
+    <div class="auto-advance" id="autoAdvance" style="display: none;">
+        <span style="font-size: 12px;">Auto-advance:</span>
+        <div class="auto-advance-toggle active" id="autoAdvanceToggle" onclick="toggleAutoAdvance()"></div>
+    </div>
+    
     <!-- Navigation Dots -->
-    <div class="nav-dots" id="navDots"></div>
+    <div class="nav-dots" id="navDots" style="display: none;"></div>
     
     <!-- Volume Control -->
-    <div class="volume-control">
+    <div class="volume-control" id="volumeControl" style="display: none;">
         <i class="fas fa-volume-up" style="color: #ff5500;"></i>
         <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
     </div>
@@ -705,6 +849,21 @@
     
     <!-- Music Container -->
     <div class="music-container" id="musicContainer">
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">
+                <i class="fas fa-music"></i>
+            </div>
+            <h1 class="empty-title">Seu Player TikTok Está Vazio</h1>
+            <p class="empty-text">
+                Adicione suas músicas para começar a usar o player estilo TikTok com scroll vertical.<br>
+                Suporta MP3, YouTube Music, Google Drive, SoundCloud, Spotify e muito mais!
+            </p>
+            <button class="get-started-btn" onclick="togglePlaylist()">
+                <i class="fas fa-plus"></i> Adicionar Primeira Música
+            </button>
+        </div>
+        
         <!-- Tracks will be loaded here -->
     </div>
     
@@ -719,20 +878,23 @@
         
         <div class="add-track-form">
             <div class="type-selector">
-                <button class="type-btn active" id="typeUrl" onclick="selectType('url')">URL de Áudio</button>
+                <button class="type-btn active" id="typeUrl" onclick="selectType('url')">URL ou Link</button>
                 <button class="type-btn" id="typeEmbed" onclick="selectType('embed')">Código Embed</button>
             </div>
             
             <div class="input-group" id="urlInputGroup">
-                <label class="input-label">URL de áudio (MP3, etc) ou link do YouTube/SoundCloud:</label>
+                <label class="input-label">Cole o link da música:</label>
                 <input type="text" class="url-input" id="trackUrl" 
-                       placeholder="https://exemplo.com/musica.mp3">
+                       placeholder="https://music.youtube.com/... ou https://drive.google.com/...">
+                <div style="font-size: 12px; color: #888; margin-top: 5px;">
+                    Suporta: YouTube Music, Google Drive, SoundCloud, Spotify, MP3 direto
+                </div>
             </div>
             
             <div class="input-group" id="embedInputGroup" style="display: none;">
-                <label class="input-label">Código Embed (SoundCloud, Spotify, YouTube, etc):</label>
+                <label class="input-label">Cole o código embed completo:</label>
                 <textarea class="embed-input" id="trackEmbed" rows="4" 
-placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"></textarea>
+placeholder="<iframe src='...'></iframe>"></textarea>
             </div>
             
             <button class="add-btn" onclick="addTrack()">
@@ -741,18 +903,18 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         </div>
         
         <div class="playlist-tracks" id="playlistTracks">
-            <!-- Playlist tracks will be loaded here -->
+            <!-- Playlist will be loaded here -->
         </div>
     </div>
 
     <script>
         // Player state
         let currentAudio = document.getElementById('mainAudioPlayer');
-        let currentEmbed = null;
         let currentTrackIndex = 0;
         let isPlaying = false;
         let playlist = [];
         let currentTrackType = 'url';
+        let autoAdvance = true;
         
         // DOM elements
         const musicContainer = document.getElementById('musicContainer');
@@ -762,78 +924,33 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         const trackEmbedInput = document.getElementById('trackEmbed');
         const volumeSlider = document.getElementById('volumeSlider');
         const nowPlayingText = document.getElementById('nowPlayingText');
+        const nowPlaying = document.getElementById('nowPlaying');
         const navDots = document.getElementById('navDots');
-        
-        // Sample tracks com tipos diferentes
-        const sampleTracks = [
-            {
-                id: 1,
-                type: 'audio',
-                title: "Lo-fi Chill",
-                artist: "Lofi Producer",
-                album: "Study Beats",
-                artwork: "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=400&fit=crop",
-                duration: "2:45",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-                platform: "native"
-            },
-            {
-                id: 2,
-                type: 'embed',
-                title: "The Fate of Ophelia",
-                artist: "Taylor Swift",
-                album: "Midnights (Special Edition)",
-                artwork: "https://i.scdn.co/image/ab67616d00001e028c8b428e50c733b1a6fdcf16ac8ca3c6f3e7b43a",
-                duration: "3:45",
-                embedCode: `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1787436246&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`,
-                platform: "soundcloud"
-            },
-            {
-                id: 3,
-                type: 'audio',
-                title: "Jazz Vibes",
-                artist: "Jazz Ensemble",
-                album: "Coffee Shop Sessions",
-                artwork: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?w=400&h=400&fit=crop",
-                duration: "3:20",
-                audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-                platform: "native"
-            },
-            {
-                id: 4,
-                type: 'embed',
-                title: "Blinding Lights",
-                artist: "The Weeknd",
-                album: "After Hours",
-                artwork: "https://i.scdn.co/image/ab67616d00001e028086e2e00702709e3f44e574",
-                duration: "3:22",
-                embedCode: `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/0VjIjW4GlUZAMYd2vXMi3b?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`,
-                platform: "spotify"
-            }
-        ];
+        const autoAdvanceToggle = document.getElementById('autoAdvanceToggle');
+        const autoAdvanceControl = document.getElementById('autoAdvance');
+        const volumeControl = document.getElementById('volumeControl');
+        const quickAdd = document.getElementById('quickAdd');
+        const emptyState = document.getElementById('emptyState');
         
         // Initialize player
         function initPlayer() {
-            // Load sample tracks
-            playlist = [...sampleTracks];
-            renderPlaylist();
-            renderTracks();
-            createNavDots();
-            updateNowPlaying();
+            // Start with empty playlist
+            playlist = [];
             
             // Setup audio event listeners
             setupAudioEvents();
             
-            // Auto-play first track
-            setTimeout(() => {
-                playTrack(0);
-            }, 1000);
+            // Setup message listener for embeds
+            setupEmbedMessageListener();
+            
+            console.log('🎵 SoundScroll Player iniciado!');
+            console.log('📋 Playlist vazia - Pronto para adicionar músicas');
         }
         
         // Setup audio event listeners
         function setupAudioEvents() {
             currentAudio.addEventListener('timeupdate', updateProgress);
-            currentAudio.addEventListener('ended', playNext);
+            currentAudio.addEventListener('ended', handleAudioEnded);
             currentAudio.addEventListener('loadedmetadata', updateDurationDisplay);
             currentAudio.addEventListener('error', handleAudioError);
             
@@ -841,6 +958,107 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
             volumeSlider.addEventListener('input', (e) => {
                 currentAudio.volume = e.target.value / 100;
             });
+        }
+        
+        // Setup embed message listener
+        function setupEmbedMessageListener() {
+            window.addEventListener('message', (e) => {
+                try {
+                    const data = JSON.parse(e.data);
+                    
+                    // SoundCloud messages
+                    if (e.origin.includes('soundcloud.com')) {
+                        handleSoundCloudMessage(data);
+                    }
+                    
+                    // YouTube messages
+                    if (e.origin.includes('youtube.com')) {
+                        handleYouTubeMessage(data);
+                    }
+                    
+                } catch (err) {
+                    // Not a JSON message, ignore
+                }
+            });
+        }
+        
+        // Handle SoundCloud messages
+        function handleSoundCloudMessage(data) {
+            const track = playlist[currentTrackIndex];
+            if (!track || track.type !== 'embed' || track.platform !== 'soundcloud') return;
+            
+            // Track ended
+            if (data.method === 'ended') {
+                handleEmbedEnded();
+            }
+        }
+        
+        // Handle YouTube messages
+        function handleYouTubeMessage(data) {
+            if (data.event === 'onStateChange') {
+                const track = playlist[currentTrackIndex];
+                if (!track || track.type !== 'embed' || track.platform !== 'youtube') return;
+                
+                // Track ended (state 0 = ended)
+                if (data.info === 0) {
+                    handleEmbedEnded();
+                }
+            }
+        }
+        
+        // Handle audio ended
+        function handleAudioEnded() {
+            console.log('Áudio terminou, avançando para próxima...');
+            if (autoAdvance) {
+                playNext();
+            }
+        }
+        
+        // Handle embed ended
+        function handleEmbedEnded() {
+            console.log('Embed terminou, avançando para próxima...');
+            
+            if (autoAdvance) {
+                setTimeout(() => {
+                    playNext();
+                }, 500);
+            }
+        }
+        
+        // Toggle auto-advance
+        function toggleAutoAdvance() {
+            autoAdvance = !autoAdvance;
+            autoAdvanceToggle.classList.toggle('active', autoAdvance);
+            
+            // Show notification
+            const message = autoAdvance ? 'Auto-advance ativado' : 'Auto-advance desativado';
+            showNotification(message);
+        }
+        
+        // Show notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 180px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 85, 0, 0.9);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                z-index: 10000;
+                font-size: 14px;
+                backdrop-filter: blur(10px);
+                animation: fadeInOut 2s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 2000);
         }
         
         // Select input type
@@ -856,14 +1074,60 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
             document.getElementById('embedInputGroup').style.display = type === 'embed' ? 'block' : 'none';
         }
         
+        // Quick add platform
+        function quickAddPlatform(platform) {
+            selectType('url');
+            let placeholder = '';
+            
+            switch(platform) {
+                case 'youtube-music':
+                    placeholder = 'https://music.youtube.com/watch?v=...';
+                    break;
+                case 'google-drive':
+                    placeholder = 'https://drive.google.com/file/d/.../view';
+                    break;
+                case 'soundcloud':
+                    placeholder = 'https://soundcloud.com/...';
+                    break;
+                case 'spotify':
+                    placeholder = 'https://open.spotify.com/track/...';
+                    break;
+            }
+            
+            trackUrlInput.placeholder = placeholder;
+            trackUrlInput.focus();
+            togglePlaylist();
+        }
+        
+        // Update UI based on playlist state
+        function updateUIState() {
+            const hasTracks = playlist.length > 0;
+            
+            // Show/hide controls
+            nowPlaying.style.display = hasTracks ? 'flex' : 'none';
+            navDots.style.display = hasTracks ? 'flex' : 'none';
+            autoAdvanceControl.style.display = hasTracks ? 'flex' : 'none';
+            volumeControl.style.display = hasTracks ? 'flex' : 'none';
+            quickAdd.style.display = hasTracks ? 'flex' : 'none';
+            emptyState.style.display = hasTracks ? 'none' : 'flex';
+        }
+        
         // Render tracks in main container
         function renderTracks() {
             musicContainer.innerHTML = '';
+            
+            if (playlist.length === 0) {
+                musicContainer.appendChild(emptyState.cloneNode(true));
+                updateUIState();
+                return;
+            }
             
             playlist.forEach((track, index) => {
                 const trackElement = createTrackElement(track, index);
                 musicContainer.appendChild(trackElement);
             });
+            
+            updateUIState();
         }
         
         // Create track element
@@ -908,10 +1172,6 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
                                     <button class="control-btn" onclick="playNext()">
                                         <i class="fas fa-step-forward"></i>
                                     </button>
-                                </div>
-                                
-                                <div class="audio-visualizer" id="visualizer">
-                                    ${Array.from({length: 40}, () => '<div class="visualizer-bar"></div>').join('')}
                                 </div>
                             </div>
                         </div>
@@ -961,6 +1221,17 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         function renderPlaylist() {
             playlistTracks.innerHTML = '';
             
+            if (playlist.length === 0) {
+                playlistTracks.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #888;">
+                        <i class="fas fa-music" style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <p>Sua playlist está vazia</p>
+                        <p style="font-size: 12px; margin-top: 10px;">Adicione sua primeira música!</p>
+                    </div>
+                `;
+                return;
+            }
+            
             playlist.forEach((track, index) => {
                 const trackElement = createPlaylistTrackElement(track, index);
                 playlistTracks.appendChild(trackElement);
@@ -1000,8 +1271,10 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         function getPlatformIcon(platform) {
             switch(platform) {
                 case 'soundcloud': return 'cloud';
-                case 'spotify': return 'spotify';
                 case 'youtube': return 'youtube';
+                case 'youtube-music': return 'youtube';
+                case 'spotify': return 'spotify';
+                case 'google-drive': return 'google-drive';
                 case 'native': return 'music';
                 default: return 'headphones';
             }
@@ -1146,12 +1419,14 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         
         // Play next track
         function playNext() {
+            if (playlist.length === 0) return;
             const nextIndex = (currentTrackIndex + 1) % playlist.length;
             playTrack(nextIndex);
         }
         
         // Play previous track
         function playPrev() {
+            if (playlist.length === 0) return;
             const prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
             playTrack(prevIndex);
         }
@@ -1245,12 +1520,13 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         function addTrack() {
             let trackData = {};
             let platform = 'custom';
+            let url = '';
             
             if (currentTrackType === 'url') {
-                const url = trackUrlInput.value.trim();
+                url = trackUrlInput.value.trim();
                 
                 if (!url) {
-                    alert('Por favor, cole uma URL de áudio!');
+                    alert('Por favor, cole uma URL de música!');
                     return;
                 }
                 
@@ -1268,10 +1544,20 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
                         embedCode: createSpotifyEmbed(url)
                     };
                 } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                    platform = 'youtube';
+                    if (url.includes('music.youtube.com')) {
+                        platform = 'youtube-music';
+                    } else {
+                        platform = 'youtube';
+                    }
                     trackData = {
                         type: 'embed',
                         embedCode: createYouTubeEmbed(url)
+                    };
+                } else if (url.includes('drive.google.com')) {
+                    platform = 'google-drive';
+                    trackData = {
+                        type: 'audio',
+                        audioUrl: convertGoogleDriveUrl(url)
                     };
                 } else {
                     platform = 'native';
@@ -1296,6 +1582,8 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
                     platform = 'spotify';
                 } else if (embedCode.includes('youtube.com') || embedCode.includes('youtu.be')) {
                     platform = 'youtube';
+                } else if (embedCode.includes('drive.google.com')) {
+                    platform = 'google-drive';
                 }
                 
                 trackData = {
@@ -1342,13 +1630,27 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
             trackUrlInput.value = '';
             trackEmbedInput.value = '';
             
-            // Show success message
-            alert('Música adicionada à playlist!');
+            // Hide sidebar
+            togglePlaylist();
             
             // If this is the first track, play it
             if (playlist.length === 1) {
                 playTrack(0);
             }
+            
+            // Show success notification
+            showNotification('Música adicionada à playlist!');
+        }
+        
+        // Convert Google Drive URL to direct download
+        function convertGoogleDriveUrl(url) {
+            // Extract file ID from URL
+            const fileIdMatch = url.match(/\/d\/([^\/]+)/) || url.match(/id=([^&]+)/);
+            if (fileIdMatch) {
+                const fileId = fileIdMatch[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            return url;
         }
         
         // Create SoundCloud embed from URL
@@ -1373,6 +1675,8 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
                 videoId = url.split('v=')[1].split('&')[0];
             } else if (url.includes('youtu.be/')) {
                 videoId = url.split('youtu.be/')[1].split('?')[0];
+            } else if (url.includes('music.youtube.com')) {
+                videoId = url.split('v=')[1]?.split('&')[0];
             }
             
             if (videoId) {
@@ -1428,8 +1732,8 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
             // Reset file input
             event.target.value = '';
             
-            // Show success message
-            alert(`${files.length} música(s) adicionada(s) à playlist!`);
+            // Show success notification
+            showNotification(`${files.length} música(s) adicionada(s) à playlist!`);
             
             // If this is the first track, play it
             if (playlist.length === files.length) {
@@ -1479,6 +1783,10 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
             createNavDots();
             updateActiveTrack();
             updateNowPlaying();
+            updateUIState();
+            
+            // Show notification
+            showNotification('Música removida da playlist');
         }
         
         // Toggle playlist sidebar
@@ -1488,6 +1796,8 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         
         // Handle scroll to detect current track
         function handleScroll() {
+            if (playlist.length === 0) return;
+            
             const trackElements = document.querySelectorAll('.music-track');
             const containerRect = musicContainer.getBoundingClientRect();
             
@@ -1510,6 +1820,8 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
+            if (playlist.length === 0) return;
+            
             switch(e.key) {
                 case ' ':
                     e.preventDefault();
@@ -1529,15 +1841,24 @@ placeholder="<iframe src='https://w.soundcloud.com/player/?url=...'></iframe>"><
                 case 'P':
                     togglePlaylist();
                     break;
+                case 'a':
+                case 'A':
+                    toggleAutoAdvance();
+                    break;
                 case 'Escape':
                     playlistSidebar.classList.remove('open');
                     break;
             }
         });
         
-        console.log('🎵 SoundScroll Player HÍBRIDO iniciado!');
-        console.log('🔊 Suporte a Áudio Nativo + Embeds!');
-        console.log('📋 Plataformas: MP3, SoundCloud, Spotify, YouTube, Upload');
+        console.log('🎵 SoundScroll Player iniciado - Página limpa!');
+        console.log('📋 Adicione suas músicas usando a playlist (botão no canto superior direito)');
+        console.log('🎹 Atalhos (quando houver músicas):');
+        console.log('- A: Ativar/desativar auto-advance');
+        console.log('- Espaço: Play/Pause (áudio)');
+        console.log('- Setas ↑↓: Navegar entre músicas');
+        console.log('- P: Abrir/fechar playlist');
+        console.log('- Esc: Fechar playlist');
     </script>
 </body>
 </html>
