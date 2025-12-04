@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoFlow - Player Universal de Vídeo</title>
+    <title>VideoFlow - Player Completo</title>
     <style>
         * {
             margin: 0;
@@ -47,7 +47,7 @@
             align-items: center;
         }
         
-        .adblock-toggle {
+        .adblock-toggle, .pip-toggle, .background-toggle {
             display: flex;
             align-items: center;
             gap: 8px;
@@ -165,6 +165,81 @@
             font-size: 14px;
         }
         
+        /* Status indicators */
+        .status-indicators {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+        
+        .status-indicator {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-indicator.active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+        }
+        
+        .status-indicator.pip-active {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+        }
+        
+        /* PIP Controls */
+        .pip-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+        
+        .pip-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .pip-btn:hover {
+            background: rgba(255, 107, 107, 0.7);
+            transform: scale(1.1);
+        }
+        
+        /* Next video countdown */
+        .next-countdown {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 10;
+            display: none;
+        }
+        
+        /* Playlist Section */
         .playlist-section {
             background: #111;
             border-radius: 15px;
@@ -274,30 +349,7 @@
             margin-bottom: 15px;
         }
         
-        .upload-text {
-            margin-bottom: 10px;
-        }
-        
-        .upload-subtext {
-            font-size: 12px;
-            color: #666;
-        }
-        
-        /* Google Drive specific */
-        .drive-note {
-            background: rgba(66, 133, 244, 0.1);
-            border: 1px solid rgba(66, 133, 244, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-top: 15px;
-            font-size: 14px;
-        }
-        
-        .drive-note i {
-            color: #4285f4;
-            margin-right: 8px;
-        }
-        
+        /* Forms and inputs */
         .add-video-form {
             background: #1a1a1a;
             padding: 20px;
@@ -325,10 +377,6 @@
             font-size: 14px;
         }
         
-        .url-input::placeholder {
-            color: #666;
-        }
-        
         .add-btn {
             width: 100%;
             padding: 12px;
@@ -339,11 +387,6 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.3s;
-        }
-        
-        .add-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
         }
         
         .playlist-items {
@@ -406,12 +449,6 @@
             color: #999;
         }
         
-        .item-duration {
-            font-size: 12px;
-            color: #666;
-            margin-left: 10px;
-        }
-        
         .remove-btn {
             background: none;
             border: none;
@@ -424,95 +461,6 @@
         
         .remove-btn:hover {
             opacity: 1;
-        }
-        
-        /* Modal de compartilhamento */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: #111;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-title {
-            font-size: 22px;
-            font-weight: bold;
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-        
-        .share-link {
-            background: #222;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 14px;
-        }
-        
-        .copy-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        
-        /* Notificação */
-        .notification {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #00ff00;
-            color: #000;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            z-index: 1001;
-            animation: slideIn 0.3s ease;
-            display: none;
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
         }
         
         /* Player controls */
@@ -543,7 +491,7 @@
             transform: scale(1.1);
         }
         
-        /* Progress bar for local videos */
+        /* Progress bar */
         .video-progress {
             width: 100%;
             height: 4px;
@@ -559,23 +507,6 @@
             background: #ff0000;
             width: 0%;
             transition: width 0.1s;
-        }
-        
-        /* AdBlock status */
-        .adblock-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            z-index: 10;
-        }
-        
-        .adblock-status.active {
-            background: rgba(0, 255, 0, 0.2);
-            color: #00ff00;
         }
         
         /* Upload progress */
@@ -596,6 +527,41 @@
             transition: width 0.3s;
         }
         
+        /* Media Session API notification */
+        .media-session-notice {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 107, 107, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            z-index: 1002;
+            display: none;
+            animation: fadeInOut 3s ease;
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0; }
+            10%, 90% { opacity: 1; }
+        }
+        
+        /* Service Worker notice */
+        .service-worker-notice {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(66, 133, 244, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 12px;
+            z-index: 1002;
+            display: none;
+        }
+        
         /* Responsive */
         @media (max-width: 1024px) {
             .main-content {
@@ -604,6 +570,11 @@
             
             .video-wrapper {
                 min-height: 400px;
+            }
+            
+            .controls {
+                flex-wrap: wrap;
+                justify-content: center;
             }
         }
         
@@ -615,11 +586,20 @@
             header {
                 flex-direction: column;
                 gap: 15px;
-                text-align: center;
             }
             
             .video-wrapper {
                 min-height: 300px;
+            }
+            
+            .status-indicators {
+                top: 5px;
+                left: 5px;
+            }
+            
+            .pip-controls {
+                bottom: 10px;
+                left: 10px;
             }
         }
         
@@ -637,32 +617,10 @@
             border-radius: 4px;
         }
         
-        ::-webkit-scrollbar-thumb:hover {
-            background: #444;
-        }
-        
-        /* File upload input */
+        /* File input */
         .file-input {
             display: none;
         }
-        
-        /* Platform badges */
-        .platform-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: bold;
-            margin-left: 5px;
-        }
-        
-        .platform-youtube { background: #ff0000; }
-        .platform-vimeo { background: #1ab7ea; }
-        .platform-dailymotion { background: #0066dc; }
-        .platform-twitch { background: #9146ff; }
-        .platform-google-drive { background: #34a853; }
-        .platform-local { background: #9c27b0; }
-        .platform-custom { background: #ff9800; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -677,17 +635,52 @@
                     <span>AdBlock</span>
                     <div class="toggle-switch active" id="adblockToggle"></div>
                 </div>
+                <div class="pip-toggle" onclick="togglePIPSupport()">
+                    <span>PIP</span>
+                    <div class="toggle-switch" id="pipToggle"></div>
+                </div>
+                <div class="background-toggle" onclick="toggleBackgroundPlayback()">
+                    <span>Segundo Plano</span>
+                    <div class="toggle-switch" id="backgroundToggle"></div>
+                </div>
             </div>
         </header>
         
         <div class="main-content">
-            <!-- Player Section -->
             <section class="video-player-section">
                 <div class="video-wrapper">
-                    <div class="adblock-status active" id="adblockStatus">
-                        <i class="fas fa-shield-alt"></i> AdBlock Ativo
+                    <!-- Status Indicators -->
+                    <div class="status-indicators">
+                        <div class="status-indicator active" id="autoAdvanceStatus">
+                            <i class="fas fa-forward"></i> Auto-Advance
+                        </div>
+                        <div class="status-indicator" id="adblockStatus">
+                            <i class="fas fa-shield-alt"></i> AdBlock
+                        </div>
+                        <div class="status-indicator" id="pipStatus">
+                            <i class="fas fa-picture-in-picture"></i> PIP
+                        </div>
+                        <div class="status-indicator" id="backgroundStatus">
+                            <i class="fas fa-mobile-alt"></i> Segundo Plano
+                        </div>
                     </div>
                     
+                    <!-- PIP Controls -->
+                    <div class="pip-controls" id="pipControls" style="display: none;">
+                        <button class="pip-btn" onclick="togglePictureInPicture()" title="Picture-in-Picture">
+                            <i class="fas fa-external-link-alt"></i>
+                        </button>
+                        <button class="pip-btn" onclick="enterFullscreen()" title="Tela Cheia">
+                            <i class="fas fa-expand"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Next Video Countdown -->
+                    <div class="next-countdown" id="nextCountdown">
+                        Próximo em: <span id="countdownSeconds">5</span>s
+                    </div>
+                    
+                    <!-- Video Container -->
                     <div class="video-container" id="videoContainer">
                         <div class="empty-video">
                             <i class="fas fa-video"></i>
@@ -697,10 +690,12 @@
                     </div>
                 </div>
                 
+                <!-- Progress Bar -->
                 <div class="video-progress" id="videoProgress">
                     <div class="progress-bar" id="progressBar"></div>
                 </div>
                 
+                <!-- Video Info -->
                 <div class="video-info" id="videoInfo" style="display: none;">
                     <h2 class="video-title" id="currentVideoTitle">Título do Vídeo</h2>
                     <div class="video-meta">
@@ -710,6 +705,7 @@
                     </div>
                 </div>
                 
+                <!-- Player Controls -->
                 <div class="player-controls" id="playerControls" style="display: none;">
                     <button class="control-btn" onclick="playPrevious()">
                         <i class="fas fa-step-backward"></i>
@@ -761,10 +757,6 @@
                                 <input type="text" class="url-input" id="videoUrl" 
                                        placeholder="https://youtube.com/watch?v=... ou https://drive.google.com/file/d/...">
                             </div>
-                            <div class="drive-note">
-                                <i class="fab fa-google-drive"></i>
-                                <strong>Google Drive:</strong> Use links compartilháveis. Certifique-se de que o arquivo está configurado como "Qualquer pessoa com o link pode ver".
-                            </div>
                             <button class="add-btn" onclick="addVideoFromLink()">
                                 <i class="fas fa-plus"></i> Adicionar Vídeo
                             </button>
@@ -785,21 +777,15 @@
                                 <div class="upload-subtext">
                                     Arraste e solte ou clique para fazer upload
                                 </div>
-                                <div class="upload-subtext">
-                                    Suporta: MP4, WebM, OGG, MOV, AVI
-                                </div>
                             </div>
                             <div class="upload-progress" id="uploadProgress">
                                 <div class="upload-progress-bar" id="uploadProgressBar"></div>
-                            </div>
-                            <div class="drive-note">
-                                <i class="fas fa-info-circle"></i>
-                                Os vídeos são armazenados localmente no seu navegador.
                             </div>
                         </div>
                     </div>
                 </div>
                 
+                <!-- Playlist Items -->
                 <div class="playlist-items" id="playlistItems">
                     <!-- Playlist items will be added here -->
                 </div>
@@ -807,413 +793,325 @@
         </div>
     </div>
     
-    <!-- Share Modal -->
-    <div class="modal" id="shareModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">
-                    <i class="fas fa-share-alt"></i> Compartilhar Playlist
-                </h3>
-                <button class="close-modal" onclick="closeShareModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <p>Compartilhe este link para que outras pessoas possam acessar sua playlist:</p>
-            <div class="share-link" id="shareLink">
-                Carregando...
-            </div>
-            <button class="copy-btn" onclick="copyShareLink()">
-                <i class="fas fa-copy"></i> Copiar Link
-            </button>
-        </div>
+    <!-- Notifications -->
+    <div class="media-session-notice" id="mediaSessionNotice">
+        <i class="fas fa-music"></i> Agora tocando em segundo plano
     </div>
     
-    <!-- Notification -->
-    <div class="notification" id="notification"></div>
+    <div class="service-worker-notice" id="serviceWorkerNotice">
+        <i class="fas fa-bolt"></i> Reprodução em segundo plano ativada
+    </div>
 
     <script>
-        // State management
+        // ===== STATE MANAGEMENT =====
         let playlist = [];
         let currentVideoIndex = 0;
         let isAdBlockEnabled = true;
+        let isAutoAdvanceEnabled = true;
+        let isPIPEnabled = false;
+        let isBackgroundPlaybackEnabled = false;
         let isPlaying = false;
         let shareableLink = '';
         let currentVideoPlayer = null;
         let currentTab = 'link';
+        let isInPiP = false;
+        let isFullscreen = false;
         
-        // DOM Elements
-        const videoContainer = document.getElementById('videoContainer');
-        const playlistItems = document.getElementById('playlistItems');
-        const videoUrlInput = document.getElementById('videoUrl');
-        const videoUploadInput = document.getElementById('videoUpload');
-        const adblockToggle = document.getElementById('adblockToggle');
-        const adblockStatus = document.getElementById('adblockStatus');
-        const videoInfo = document.getElementById('videoInfo');
-        const playerControls = document.getElementById('playerControls');
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const muteBtn = document.getElementById('muteBtn');
-        const shareModal = document.getElementById('shareModal');
-        const shareLink = document.getElementById('shareLink');
-        const notification = document.getElementById('notification');
-        const videoProgress = document.getElementById('videoProgress');
-        const progressBar = document.getElementById('progressBar');
-        const uploadProgress = document.getElementById('uploadProgress');
-        const uploadProgressBar = document.getElementById('uploadProgressBar');
+        // Audio context for background playback
+        let audioContext = null;
+        let mediaElementSource = null;
+        let backgroundAudio = null;
         
-        // Platform detection and embed generation
-        const platformConfigs = {
-            'youtube': {
-                regex: /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
-                embed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&showinfo=0"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-                `,
-                cleanEmbed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0"
-                        frameborder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-                `
-            },
-            'vimeo': {
-                regex: /vimeo\.com\/(?:video\/)?([0-9]+)/,
-                embed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0"
-                        frameborder="0"
-                        allow="autoplay; fullscreen; picture-in-picture"
-                        allowfullscreen>
-                    </iframe>
-                `
-            },
-            'dailymotion': {
-                regex: /dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/,
-                embed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://www.dailymotion.com/embed/video/${id}?autoplay=1"
-                        frameborder="0"
-                        allowfullscreen>
-                    </iframe>
-                `
-            },
-            'twitch': {
-                regex: /twitch\.tv\/videos\/([0-9]+)/,
-                embed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://player.twitch.tv/?video=${id}&parent=${window.location.hostname}&autoplay=true"
-                        frameborder="0"
-                        allowfullscreen>
-                    </iframe>
-                `
-            },
-            'google-drive': {
-                regex: /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
-                embed: (id) => `
-                    <iframe 
-                        class="video-embed"
-                        src="https://drive.google.com/file/d/${id}/preview"
-                        frameborder="0"
-                        allow="autoplay"
-                        allowfullscreen>
-                    </iframe>
-                `
-            }
-        };
+        // Service Worker for background playback
+        let serviceWorkerRegistered = false;
         
-        // Initialize
-        function init() {
-            // Load playlist from localStorage if exists
+        // ===== INITIALIZATION =====
+        async function init() {
+            // Load playlist from localStorage
             const savedPlaylist = localStorage.getItem('videoflow_playlist');
             if (savedPlaylist) {
-                playlist = JSON.parse(savedPlaylist);
-                renderPlaylist();
-                if (playlist.length > 0) {
-                    playVideo(0);
+                try {
+                    playlist = JSON.parse(savedPlaylist);
+                    renderPlaylist();
+                    if (playlist.length > 0) {
+                        playVideo(0);
+                    }
+                } catch (e) {
+                    console.error('Erro ao carregar playlist:', e);
                 }
             }
             
-            // Setup file upload listener
-            videoUploadInput.addEventListener('change', handleFileUpload);
+            // Setup file upload
+            document.getElementById('videoUpload').addEventListener('change', handleFileUpload);
             
             // Setup drag and drop
             setupDragAndDrop();
             
-            console.log('🎬 VideoFlow Player inicializado');
+            // Register Service Worker for background playback
+            await registerServiceWorker();
+            
+            // Setup visibility change listener for background playback
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+            
+            console.log('🎬 VideoFlow inicializado com PIP e reprodução em segundo plano');
         }
         
-        // Switch between tabs
-        function switchTab(tab) {
-            currentTab = tab;
-            
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
-            
-            // Update tab content
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
-        }
-        
-        // Setup drag and drop
-        function setupDragAndDrop() {
-            const uploadArea = document.querySelector('.upload-area');
-            
-            uploadArea.addEventListener('dragover', (e) => {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#ff6b6b';
-                uploadArea.style.background = 'rgba(255, 107, 107, 0.1)';
-            });
-            
-            uploadArea.addEventListener('dragleave', () => {
-                uploadArea.style.borderColor = '#444';
-                uploadArea.style.background = 'transparent';
-            });
-            
-            uploadArea.addEventListener('drop', (e) => {
-                e.preventDefault();
-                uploadArea.style.borderColor = '#444';
-                uploadArea.style.background = 'transparent';
-                
-                if (e.dataTransfer.files.length > 0) {
-                    handleFiles(e.dataTransfer.files);
-                }
-            });
-        }
-        
-        // Handle file upload
-        function handleFileUpload(event) {
-            handleFiles(event.target.files);
-        }
-        
-        // Handle files (upload or drag & drop)
-        function handleFiles(files) {
-            uploadProgress.style.display = 'block';
-            uploadProgressBar.style.width = '0%';
-            
-            let processed = 0;
-            const total = files.length;
-            
-            Array.from(files).forEach((file, index) => {
-                if (!file.type.startsWith('video/')) {
-                    showNotification(`Arquivo ${file.name} não é um vídeo!`, 'error');
-                    processed++;
-                    updateUploadProgress(processed, total);
-                    return;
-                }
-                
-                // Read file as data URL
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    const videoData = {
-                        id: Date.now() + index,
-                        type: 'local',
-                        platform: 'local',
-                        title: file.name.replace(/\.[^/.]+$/, ""),
-                        duration: '?',
-                        size: formatFileSize(file.size),
-                        mimeType: file.type,
-                        dataUrl: e.target.result,
-                        thumbnail: null // Can generate thumbnail later
-                    };
-                    
-                    playlist.push(videoData);
-                    processed++;
-                    updateUploadProgress(processed, total);
-                    
-                    if (processed === total) {
-                        savePlaylist();
-                        renderPlaylist();
+        // ===== SERVICE WORKER REGISTRATION =====
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator && 'MediaSession' in navigator) {
+                try {
+                    // Create Service Worker script
+                    const swScript = `
+                        self.addEventListener('message', event => {
+                            if (event.data.type === 'PLAYBACK_INFO') {
+                                // Handle playback info for background
+                                console.log('Service Worker: Received playback info');
+                            }
+                        });
                         
-                        if (playlist.length === files.length) {
-                            playVideo(0);
-                        }
-                        
-                        setTimeout(() => {
-                            uploadProgress.style.display = 'none';
-                            showNotification(`${files.length} vídeo(s) adicionado(s)!`);
-                        }, 500);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    processed++;
-                    updateUploadProgress(processed, total);
-                    showNotification(`Erro ao ler arquivo ${file.name}`, 'error');
-                };
-                
-                reader.readAsDataURL(file);
-            });
-            
-            // Reset file input
-            videoUploadInput.value = '';
+                        self.addEventListener('notificationclick', event => {
+                            event.notification.close();
+                            clients.openWindow('/');
+                        });
+                    `;
+                    
+                    // Create blob URL for Service Worker
+                    const blob = new Blob([swScript], { type: 'application/javascript' });
+                    const swURL = URL.createObjectURL(blob);
+                    
+                    // Register Service Worker
+                    const registration = await navigator.serviceWorker.register(swURL);
+                    serviceWorkerRegistered = true;
+                    
+                    document.getElementById('serviceWorkerNotice').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('serviceWorkerNotice').style.display = 'none';
+                    }, 3000);
+                    
+                    console.log('✅ Service Worker registrado');
+                } catch (error) {
+                    console.log('❌ Service Worker não suportado:', error);
+                }
+            }
         }
         
-        // Update upload progress
-        function updateUploadProgress(processed, total) {
-            const progress = (processed / total) * 100;
-            uploadProgressBar.style.width = `${progress}%`;
-        }
-        
-        // Format file size
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        
-        // Add video from link
-        function addVideoFromLink() {
-            const url = videoUrlInput.value.trim();
-            
-            if (!url) {
-                showNotification('Por favor, cole um link de vídeo!', 'error');
+        // ===== PICTURE-IN-PICTURE =====
+        function togglePIPSupport() {
+            if (!document.pictureInPictureEnabled) {
+                showNotification('PIP não suportado neste navegador', 'error');
                 return;
             }
             
-            // Detect platform and extract video ID
-            let videoData = null;
+            isPIPEnabled = !isPIPEnabled;
+            document.getElementById('pipToggle').classList.toggle('active', isPIPEnabled);
+            document.getElementById('pipStatus').classList.toggle('active', isPIPEnabled);
             
-            for (const [platform, config] of Object.entries(platformConfigs)) {
-                const match = url.match(config.regex);
-                if (match) {
-                    const videoId = match[1];
-                    const title = prompt('Título do vídeo:', `Vídeo do ${platform.charAt(0).toUpperCase() + platform.slice(1)}`) || 
-                                 `Vídeo do ${platform.charAt(0).toUpperCase() + platform.slice(1)}`;
-                    const duration = prompt('Duração (opcional, ex: 5:30):', '') || '';
-                    
-                    videoData = {
-                        id: Date.now(),
-                        type: 'embed',
-                        url: url,
-                        videoId: videoId,
-                        platform: platform,
-                        title: title,
-                        duration: duration,
-                        thumbnail: getThumbnailUrl(platform, videoId)
-                    };
-                    break;
-                }
-            }
+            // Show/hide PIP controls
+            document.getElementById('pipControls').style.display = isPIPEnabled ? 'flex' : 'none';
             
-            if (!videoData) {
-                // Try to handle as generic embed
-                if (url.includes('<iframe')) {
-                    const title = prompt('Título do vídeo:', 'Vídeo Embed') || 'Vídeo Embed';
-                    const duration = prompt('Duração (opcional):', '') || '';
-                    
-                    videoData = {
-                        id: Date.now(),
-                        type: 'embed',
-                        url: url,
-                        platform: 'custom',
-                        title: title,
-                        duration: duration,
-                        embedCode: url
-                    };
+            showNotification(isPIPEnabled ? 'PIP ativado' : 'PIP desativado');
+        }
+        
+        async function togglePictureInPicture() {
+            if (!currentVideoPlayer || !isPIPEnabled) return;
+            
+            try {
+                if (!document.pictureInPictureElement) {
+                    // Enter PIP
+                    await currentVideoPlayer.requestPictureInPicture();
+                    isInPiP = true;
+                    document.getElementById('pipStatus').classList.add('pip-active');
+                    showNotification('Vídeo em Picture-in-Picture');
                 } else {
-                    showNotification('Link de vídeo não suportado!', 'error');
-                    return;
+                    // Exit PIP
+                    await document.exitPictureInPicture();
+                    isInPiP = false;
+                    document.getElementById('pipStatus').classList.remove('pip-active');
                 }
-            }
-            
-            playlist.push(videoData);
-            savePlaylist();
-            renderPlaylist();
-            
-            // Clear input
-            videoUrlInput.value = '';
-            
-            // Auto-play first video
-            if (playlist.length === 1) {
-                playVideo(0);
-            }
-            
-            showNotification('Vídeo adicionado à playlist!');
-        }
-        
-        // Get thumbnail URL
-        function getThumbnailUrl(platform, videoId) {
-            switch(platform) {
-                case 'youtube':
-                    return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-                case 'vimeo':
-                    return `https://vumbnail.com/${videoId}.jpg`;
-                case 'dailymotion':
-                    return `https://www.dailymotion.com/thumbnail/video/${videoId}`;
-                default:
-                    return '';
+            } catch (error) {
+                console.error('Erro no PIP:', error);
+                showNotification('Erro ao ativar PIP', 'error');
             }
         }
         
-        // Render playlist
-        function renderPlaylist() {
-            playlistItems.innerHTML = '';
+        // Handle PIP events
+        function setupPIPListeners() {
+            if (!currentVideoPlayer) return;
             
-            if (playlist.length === 0) {
-                playlistItems.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #666;">
-                        <i class="fas fa-video" style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <p>Sua playlist está vazia</p>
-                        <p style="font-size: 12px; margin-top: 10px;">Adicione seu primeiro vídeo!</p>
-                    </div>
-                `;
-                return;
-            }
+            currentVideoPlayer.addEventListener('enterpictureinpicture', () => {
+                isInPiP = true;
+                document.getElementById('pipStatus').classList.add('pip-active');
+            });
             
-            playlist.forEach((video, index) => {
-                const item = document.createElement('div');
-                item.className = `playlist-item ${index === currentVideoIndex ? 'active' : ''}`;
-                item.dataset.index = index;
-                item.onclick = () => playVideo(index);
-                
-                // Platform badge color
-                const platformClass = `platform-${video.platform.replace('-', '')}`;
-                
-                item.innerHTML = `
-                    <div class="item-number">${index + 1}</div>
-                    <div class="item-info">
-                        <div class="item-title">${video.title}</div>
-                        <div class="item-platform">
-                            ${video.platform.charAt(0).toUpperCase() + video.platform.slice(1)}
-                            ${video.size ? ` • ${video.size}` : ''}
-                        </div>
-                    </div>
-                    <div class="item-duration">${video.duration || '?'}</div>
-                    <button class="remove-btn" onclick="removeVideo(${video.id}, event)">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                
-                playlistItems.appendChild(item);
+            currentVideoPlayer.addEventListener('leavepictureinpicture', () => {
+                isInPiP = false;
+                document.getElementById('pipStatus').classList.remove('pip-active');
             });
         }
         
-        // Play video
+        // ===== BACKGROUND PLAYBACK =====
+        function toggleBackgroundPlayback() {
+            isBackgroundPlaybackEnabled = !isBackgroundPlaybackEnabled;
+            document.getElementById('backgroundToggle').classList.toggle('active', isBackgroundPlaybackEnabled);
+            document.getElementById('backgroundStatus').classList.toggle('active', isBackgroundPlaybackEnabled);
+            
+            if (isBackgroundPlaybackEnabled && currentVideoPlayer) {
+                setupBackgroundPlayback();
+            }
+            
+            showNotification(isBackgroundPlaybackEnabled ? 
+                'Reprodução em segundo plano ativada' : 
+                'Reprodução em segundo plano desativada');
+        }
+        
+        function setupBackgroundPlayback() {
+            if (!currentVideoPlayer || !isBackgroundPlaybackEnabled) return;
+            
+            // Setup Media Session API for mobile background playback
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.metadata = new MediaMetadata({
+                    title: playlist[currentVideoIndex]?.title || 'VideoFlow',
+                    artist: 'VideoFlow Player',
+                    album: 'Playlist',
+                    artwork: [
+                        { src: 'https://via.placeholder.com/96x96', sizes: '96x96', type: 'image/png' },
+                        { src: 'https://via.placeholder.com/128x128', sizes: '128x128', type: 'image/png' },
+                        { src: 'https://via.placeholder.com/192x192', sizes: '192x192', type: 'image/png' },
+                        { src: 'https://via.placeholder.com/256x256', sizes: '256x256', type: 'image/png' },
+                        { src: 'https://via.placeholder.com/384x384', sizes: '384x384', type: 'image/png' },
+                        { src: 'https://via.placeholder.com/512x512', sizes: '512x512', type: 'image/png' },
+                    ]
+                });
+                
+                navigator.mediaSession.setActionHandler('play', () => {
+                    currentVideoPlayer.play();
+                    updateMediaSessionPlaybackState('playing');
+                });
+                
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    currentVideoPlayer.pause();
+                    updateMediaSessionPlaybackState('paused');
+                });
+                
+                navigator.mediaSession.setActionHandler('previoustrack', playPrevious);
+                navigator.mediaSession.setActionHandler('nexttrack', playNext);
+                
+                // Show notification
+                document.getElementById('mediaSessionNotice').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('mediaSessionNotice').style.display = 'none';
+                }, 3000);
+            }
+            
+            // Create silent audio context for iOS background playback
+            if (!audioContext && typeof AudioContext !== 'undefined') {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                
+                if (currentVideoPlayer) {
+                    mediaElementSource = audioContext.createMediaElementSource(currentVideoPlayer);
+                    mediaElementSource.connect(audioContext.destination);
+                }
+            }
+        }
+        
+        function updateMediaSessionPlaybackState(state) {
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = state;
+            }
+        }
+        
+        function handleVisibilityChange() {
+            if (document.hidden && isBackgroundPlaybackEnabled && currentVideoPlayer) {
+                // Page is hidden, keep audio playing
+                if (audioContext && audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            }
+        }
+        
+        // ===== FULLSCREEN =====
+        function enterFullscreen() {
+            const videoContainer = document.querySelector('.video-wrapper');
+            
+            if (!document.fullscreenElement) {
+                if (videoContainer.requestFullscreen) {
+                    videoContainer.requestFullscreen();
+                } else if (videoContainer.webkitRequestFullscreen) {
+                    videoContainer.webkitRequestFullscreen();
+                } else if (videoContainer.mozRequestFullScreen) {
+                    videoContainer.mozRequestFullScreen();
+                }
+                isFullscreen = true;
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                }
+                isFullscreen = false;
+            }
+        }
+        
+        // ===== AUTO-ADVANCE SYSTEM =====
+        function toggleAutoAdvance() {
+            isAutoAdvanceEnabled = !isAutoAdvanceEnabled;
+            document.getElementById('autoAdvanceStatus').classList.toggle('active', isAutoAdvanceEnabled);
+            showNotification(isAutoAdvanceEnabled ? 'Auto-advance ativado' : 'Auto-advance desativado');
+        }
+        
+        function setupAutoAdvance(videoElement) {
+            if (!videoElement) return;
+            
+            videoElement.addEventListener('ended', () => {
+                if (isAutoAdvanceEnabled) {
+                    // Show countdown before auto-advance
+                    showNextCountdown();
+                }
+            });
+            
+            // For embeds, use time update to detect end
+            videoElement.addEventListener('timeupdate', () => {
+                if (!isAutoAdvanceEnabled) return;
+                
+                const timeRemaining = videoElement.duration - videoElement.currentTime;
+                if (timeRemaining < 5 && timeRemaining > 0) {
+                    showNextCountdown(Math.ceil(timeRemaining));
+                }
+            });
+        }
+        
+        function showNextCountdown(seconds = 5) {
+            const countdownElement = document.getElementById('nextCountdown');
+            const secondsElement = document.getElementById('countdownSeconds');
+            
+            secondsElement.textContent = seconds;
+            countdownElement.style.display = 'block';
+            
+            let countdown = seconds;
+            const countdownInterval = setInterval(() => {
+                countdown--;
+                secondsElement.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    countdownElement.style.display = 'none';
+                    if (isAutoAdvanceEnabled) {
+                        playNext();
+                    }
+                }
+            }, 1000);
+        }
+        
+        // ===== VIDEO PLAYBACK =====
         function playVideo(index) {
             if (index < 0 || index >= playlist.length) return;
             
             currentVideoIndex = index;
             const video = playlist[index];
             
-            // Clean up previous player
+            // Stop previous playback
             if (currentVideoPlayer) {
                 currentVideoPlayer.pause();
                 currentVideoPlayer = null;
@@ -1223,61 +1121,44 @@
             renderPlaylist();
             updateVideoInfo(video);
             
-            // Generate player based on video type
+            // Create player based on type
             let playerHtml = '';
             
             if (video.type === 'local') {
-                // Local video player
                 playerHtml = `
-                    <video class="video-player" id="localVideoPlayer" controls autoplay>
+                    <video class="video-player" id="localVideoPlayer" controls autoplay playsinline>
                         <source src="${video.dataUrl}" type="${video.mimeType}">
-                        Seu navegador não suporta a tag de vídeo.
+                        Seu navegador não suporta vídeo HTML5.
                     </video>
                 `;
-                videoProgress.style.display = 'block';
-                playerControls.style.display = 'flex';
-            } else if (video.type === 'embed') {
+                document.getElementById('videoProgress').style.display = 'block';
+                document.getElementById('playerControls').style.display = 'flex';
+            } else {
                 // Embed player
-                if (video.platform === 'custom') {
-                    playerHtml = applyAdBlockFilters(video.embedCode);
-                } else {
-                    const config = platformConfigs[video.platform];
-                    if (config) {
-                        if (isAdBlockEnabled && video.platform === 'youtube' && config.cleanEmbed) {
-                            playerHtml = config.cleanEmbed(video.videoId);
-                        } else {
-                            playerHtml = config.embed(video.videoId);
-                        }
-                    }
-                }
-                
-                // Apply additional AdBlock filters
-                playerHtml = applyAdBlockFilters(playerHtml);
-                videoProgress.style.display = 'none';
-                playerControls.style.display = 'flex';
+                const embed = generateEmbed(video);
+                playerHtml = isAdBlockEnabled ? applyAdBlockFilters(embed) : embed;
+                document.getElementById('videoProgress').style.display = 'none';
+                document.getElementById('playerControls').style.display = 'flex';
             }
             
             // Display video
-            videoContainer.innerHTML = playerHtml;
-            videoInfo.style.display = 'block';
+            document.getElementById('videoContainer').innerHTML = playerHtml;
+            document.getElementById('videoInfo').style.display = 'block';
             
-            // Setup local video player events
+            // Setup local video player
             if (video.type === 'local') {
                 setTimeout(() => {
                     const videoPlayer = document.getElementById('localVideoPlayer');
                     if (videoPlayer) {
                         currentVideoPlayer = videoPlayer;
                         
-                        videoPlayer.addEventListener('timeupdate', updateLocalProgress);
-                        videoPlayer.addEventListener('play', () => {
-                            isPlaying = true;
-                            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                        });
-                        videoPlayer.addEventListener('pause', () => {
-                            isPlaying = false;
-                            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                        });
-                        videoPlayer.addEventListener('ended', playNext);
+                        // Setup event listeners
+                        setupPIPListeners();
+                        setupAutoAdvance(videoPlayer);
+                        
+                        if (isBackgroundPlaybackEnabled) {
+                            setupBackgroundPlayback();
+                        }
                         
                         // Try to get duration
                         videoPlayer.addEventListener('loadedmetadata', () => {
@@ -1288,6 +1169,12 @@
                                 renderPlaylist();
                             }
                         });
+                        
+                        // Update progress
+                        videoPlayer.addEventListener('timeupdate', () => {
+                            const progress = (videoPlayer.currentTime / videoPlayer.duration) * 100;
+                            document.getElementById('progressBar').style.width = `${progress}%`;
+                        });
                     }
                 }, 100);
             }
@@ -1296,154 +1183,7 @@
             localStorage.setItem('videoflow_last_played', index);
         }
         
-        // Update local video progress
-        function updateLocalProgress() {
-            if (!currentVideoPlayer) return;
-            
-            const progress = (currentVideoPlayer.currentTime / currentVideoPlayer.duration) * 100;
-            progressBar.style.width = `${progress}%`;
-            
-            // Update duration display
-            const durationElement = document.getElementById('currentVideoDuration');
-            if (durationElement && !isNaN(currentVideoPlayer.duration)) {
-                durationElement.textContent = formatDuration(currentVideoPlayer.currentTime) + 
-                                            ' / ' + 
-                                            formatDuration(currentVideoPlayer.duration);
-            }
-        }
-        
-        // Format duration
-        function formatDuration(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${mins}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        // Apply AdBlock filters
-        function applyAdBlockFilters(html) {
-            if (!isAdBlockEnabled) return html;
-            
-            // Remove common ad elements
-            let cleanHtml = html
-                .replace(/ads\.[^"']+/gi, 'blocked-ad-server')
-                .replace(/doubleclick\.net/gi, 'blocked-ad-server')
-                .replace(/googlesyndication\.com/gi, 'blocked-ad-server')
-                .replace(/adserver\.[^"']+/gi, 'blocked-ad-server')
-                .replace(/(\?|&)ad(s?)=[^&"]*/gi, '')
-                .replace(/show_ads=[^&"]*/gi, '')
-                .replace(/pre-roll=[^&"]*/gi, '');
-            
-            // Add no-cookie domains where possible
-            if (cleanHtml.includes('youtube.com/embed')) {
-                cleanHtml = cleanHtml.replace('youtube.com', 'youtube-nocookie.com');
-            }
-            
-            return cleanHtml;
-        }
-        
-        // Update video info
-        function updateVideoInfo(video) {
-            document.getElementById('currentVideoTitle').textContent = video.title;
-            document.getElementById('currentVideoPlatform').textContent = 
-                video.platform.charAt(0).toUpperCase() + video.platform.slice(1);
-            
-            const durationElement = document.getElementById('currentVideoDuration');
-            const sizeElement = document.getElementById('currentVideoSize');
-            
-            if (video.duration && video.duration !== '?') {
-                durationElement.textContent = video.duration;
-                durationElement.style.display = 'inline';
-            } else {
-                durationElement.style.display = 'none';
-            }
-            
-            if (video.size) {
-                sizeElement.textContent = ` • ${video.size}`;
-                sizeElement.style.display = 'inline';
-            } else {
-                sizeElement.style.display = 'none';
-            }
-        }
-        
-        // Toggle AdBlock
-        function toggleAdBlock() {
-            isAdBlockEnabled = !isAdBlockEnabled;
-            adblockToggle.classList.toggle('active', isAdBlockEnabled);
-            adblockStatus.classList.toggle('active', isAdBlockEnabled);
-            adblockStatus.innerHTML = isAdBlockEnabled ? 
-                '<i class="fas fa-shield-alt"></i> AdBlock Ativo' : 
-                '<i class="fas fa-shield"></i> AdBlock Inativo';
-            
-            showNotification(isAdBlockEnabled ? 'AdBlock ativado!' : 'AdBlock desativado');
-            
-            // Re-render current video with new AdBlock setting
-            if (playlist.length > 0 && playlist[currentVideoIndex].type === 'embed') {
-                playVideo(currentVideoIndex);
-            }
-        }
-        
-        // Remove video
-        function removeVideo(videoId, event) {
-            event.stopPropagation();
-            
-            const index = playlist.findIndex(v => v.id === videoId);
-            if (index === -1) return;
-            
-            playlist.splice(index, 1);
-            
-            // Adjust current video index
-            if (index === currentVideoIndex) {
-                if (playlist.length > 0) {
-                    playVideo(Math.min(index, playlist.length - 1));
-                } else {
-                    // No videos left
-                    videoContainer.innerHTML = `
-                        <div class="empty-video">
-                            <i class="fas fa-video"></i>
-                            <h3>Nenhum vídeo selecionado</h3>
-                            <p>Adicione vídeos à playlist para começar</p>
-                        </div>
-                    `;
-                    videoInfo.style.display = 'none';
-                    playerControls.style.display = 'none';
-                    videoProgress.style.display = 'none';
-                    currentVideoIndex = 0;
-                }
-            } else if (index < currentVideoIndex) {
-                currentVideoIndex--;
-            }
-            
-            savePlaylist();
-            renderPlaylist();
-            showNotification('Vídeo removido');
-        }
-        
-        // Clear playlist
-        function clearPlaylist() {
-            if (!playlist.length) return;
-            
-            if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
-                playlist = [];
-                currentVideoIndex = 0;
-                savePlaylist();
-                renderPlaylist();
-                
-                videoContainer.innerHTML = `
-                    <div class="empty-video">
-                        <i class="fas fa-video"></i>
-                        <h3>Nenhum vídeo selecionado</h3>
-                        <p>Adicione vídeos à playlist para começar</p>
-                    </div>
-                `;
-                videoInfo.style.display = 'none';
-                playerControls.style.display = 'none';
-                videoProgress.style.display = 'none';
-                
-                showNotification('Playlist limpa');
-            }
-        }
-        
-        // Player controls
+        // ===== PLAYER CONTROLS =====
         function playPrevious() {
             if (playlist.length === 0) return;
             const prevIndex = (currentVideoIndex - 1 + playlist.length) % playlist.length;
@@ -1457,245 +1197,118 @@
         }
         
         function togglePlayPause() {
-            if (playlist.length === 0) return;
+            if (!currentVideoPlayer) return;
             
-            const video = playlist[currentVideoIndex];
-            
-            if (video.type === 'local' && currentVideoPlayer) {
-                if (currentVideoPlayer.paused) {
-                    currentVideoPlayer.play();
-                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                } else {
-                    currentVideoPlayer.pause();
-                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
-                }
-            } else if (video.type === 'embed') {
-                const iframe = videoContainer.querySelector('iframe');
-                if (!iframe) return;
-                
-                try {
-                    // Toggle play/pause for embeds (YouTube API)
-                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                    playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
-                    isPlaying = !isPlaying;
-                } catch (e) {
-                    console.log('Play/Pause não suportado para este embed');
-                }
+            if (currentVideoPlayer.paused) {
+                currentVideoPlayer.play();
+                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-pause"></i>';
+                updateMediaSessionPlaybackState('playing');
+            } else {
+                currentVideoPlayer.pause();
+                document.getElementById('playPauseBtn').innerHTML = '<i class="fas fa-play"></i>';
+                updateMediaSessionPlaybackState('paused');
             }
         }
         
         function toggleMute() {
-            if (playlist.length === 0) return;
+            if (!currentVideoPlayer) return;
             
-            const video = playlist[currentVideoIndex];
-            
-            if (video.type === 'local' && currentVideoPlayer) {
-                currentVideoPlayer.muted = !currentVideoPlayer.muted;
-                muteBtn.innerHTML = currentVideoPlayer.muted ? 
-                    '<i class="fas fa-volume-mute"></i>' : 
-                    '<i class="fas fa-volume-up"></i>';
-            }
+            currentVideoPlayer.muted = !currentVideoPlayer.muted;
+            document.getElementById('muteBtn').innerHTML = currentVideoPlayer.muted ? 
+                '<i class="fas fa-volume-mute"></i>' : 
+                '<i class="fas fa-volume-up"></i>';
         }
         
-        // Share playlist
-        function sharePlaylist() {
-            if (playlist.length === 0) {
-                showNotification('Adicione vídeos à playlist antes de compartilhar!', 'error');
-                return;
-            }
-            
-            // Prepare playlist data for sharing
-            const playlistData = {
-                videos: playlist.map(v => {
-                    // For local videos, we can't share the data URL (too large)
-                    // Instead, we'll store metadata and skip the data
-                    if (v.type === 'local') {
-                        return {
-                            type: 'local',
-                            platform: v.platform,
-                            title: v.title,
-                            duration: v.duration,
-                            size: v.size,
-                            mimeType: v.mimeType
-                            // Note: dataUrl is omitted for size reasons
-                        };
-                    } else {
-                        return {
-                            type: v.type,
-                            url: v.url,
-                            platform: v.platform,
-                            title: v.title,
-                            duration: v.duration,
-                            videoId: v.videoId
-                        };
-                    }
-                }),
-                timestamp: Date.now(),
-                adBlockEnabled: isAdBlockEnabled
+        // ===== UTILITY FUNCTIONS =====
+        function generateEmbed(video) {
+            const platforms = {
+                'youtube': (id) => `
+                    <iframe class="video-embed"
+                        src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>`,
+                'vimeo': (id) => `
+                    <iframe class="video-embed"
+                        src="https://player.vimeo.com/video/${id}?autoplay=1"
+                        frameborder="0"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>`,
+                'google-drive': (id) => `
+                    <iframe class="video-embed"
+                        src="https://drive.google.com/file/d/${id}/preview"
+                        frameborder="0"
+                        allow="autoplay"
+                        allowfullscreen>
+                    </iframe>`
             };
             
-            // Encode data to base64 for URL
-            const encodedData = btoa(JSON.stringify(playlistData));
-            shareableLink = `${window.location.origin}${window.location.pathname}?playlist=${encodedData}`;
+            if (video.platform === 'custom') return video.embedCode;
+            if (platforms[video.platform]) return platforms[video.platform](video.videoId);
             
-            // Update modal
-            shareLink.textContent = shareableLink;
-            shareModal.style.display = 'flex';
+            return `<p>Plataforma não suportada: ${video.platform}</p>`;
         }
         
-        // Close share modal
-        function closeShareModal() {
-            shareModal.style.display = 'none';
-        }
-        
-        // Copy share link
-        function copyShareLink() {
-            navigator.clipboard.writeText(shareableLink)
-                .then(() => {
-                    showNotification('Link copiado para a área de transferência!');
-                    closeShareModal();
-                })
-                .catch(() => {
-                    showNotification('Erro ao copiar link', 'error');
-                });
-        }
-        
-        // Load shared playlist
-        function loadSharedPlaylist() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const playlistParam = urlParams.get('playlist');
+        function applyAdBlockFilters(html) {
+            if (!isAdBlockEnabled) return html;
             
-            if (playlistParam) {
-                try {
-                    const playlistData = JSON.parse(atob(playlistParam));
-                    
-                    playlist = playlistData.videos.map((v, i) => {
-                        if (v.type === 'local') {
-                            return {
-                                id: Date.now() + i,
-                                type: 'local',
-                                platform: v.platform,
-                                title: v.title,
-                                duration: v.duration,
-                                size: v.size,
-                                mimeType: v.mimeType,
-                                dataUrl: null // Can't recover local files from shared link
-                            };
-                        } else {
-                            return {
-                                id: Date.now() + i,
-                                type: v.type,
-                                url: v.url,
-                                platform: v.platform,
-                                title: v.title,
-                                duration: v.duration,
-                                videoId: v.videoId,
-                                thumbnail: getThumbnailUrl(v.platform, v.videoId)
-                            };
-                        }
-                    });
-                    
-                    if (playlistData.adBlockEnabled !== undefined) {
-                        isAdBlockEnabled = playlistData.adBlockEnabled;
-                        adblockToggle.classList.toggle('active', isAdBlockEnabled);
-                        adblockStatus.classList.toggle('active', isAdBlockEnabled);
-                        adblockStatus.innerHTML = isAdBlockEnabled ? 
-                            '<i class="fas fa-shield-alt"></i> AdBlock Ativo' : 
-                            '<i class="fas fa-shield"></i> AdBlock Inativo';
-                    }
-                    
-                    savePlaylist();
-                    renderPlaylist();
-                    
-                    if (playlist.length > 0) {
-                        playVideo(0);
-                    }
-                    
-                    // Clean URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    showNotification('Playlist compartilhada carregada!');
-                } catch (e) {
-                    console.error('Erro ao carregar playlist:', e);
-                    showNotification('Erro ao carregar playlist compartilhada', 'error');
-                }
-            }
+            return html
+                .replace(/ads\.[^"']+/gi, 'blocked-ad-server')
+                .replace(/doubleclick\.net/gi, 'blocked-ad-server')
+                .replace(/googlesyndication\.com/gi, 'blocked-ad-server')
+                .replace('youtube.com', 'youtube-nocookie.com');
         }
         
-        // Save playlist to localStorage
-        function savePlaylist() {
-            // For local videos, we need to handle large data URLs
-            const playlistToSave = playlist.map(v => {
-                if (v.type === 'local') {
-                    // Create a copy without the data URL to save space
-                    const { dataUrl, ...videoWithoutData } = v;
-                    return {
-                        ...videoWithoutData,
-                        hasLocalData: true
-                    };
-                }
-                return v;
-            });
-            
-            try {
-                localStorage.setItem('videoflow_playlist', JSON.stringify(playlistToSave));
-            } catch (e) {
-                console.warn('LocalStorage cheio, limpando vídeos locais...');
-                // Remove local videos if storage is full
-                playlist = playlist.filter(v => v.type !== 'local');
-                localStorage.setItem('videoflow_playlist', JSON.stringify(playlist));
-                showNotification('Armazenamento cheio, alguns vídeos foram removidos', 'error');
-            }
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
         
-        // Show notification
+        // ===== UI FUNCTIONS =====
         function showNotification(message, type = 'success') {
+            // Simple notification implementation
+            const notification = document.createElement('div');
             notification.textContent = message;
-            notification.style.background = type === 'error' ? '#ff6b6b' : '#00ff00';
-            notification.style.color = type === 'error' ? 'white' : '#000';
-            notification.style.display = 'block';
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: ${type === 'error' ? '#ff6b6b' : '#00ff00'};
+                color: ${type === 'error' ? 'white' : '#000'};
+                padding: 12px 20px;
+                border-radius: 8px;
+                font-weight: bold;
+                z-index: 1001;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
             
             setTimeout(() => {
-                notification.style.display = 'none';
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
             }, 3000);
         }
         
-        // Initialize on load
-        window.onload = function() {
-            init();
-            loadSharedPlaylist();
-        };
-        
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (playlist.length === 0) return;
-            
-            switch(e.key) {
-                case ' ':
-                    e.preventDefault();
-                    togglePlayPause();
-                    break;
-                case 'ArrowLeft':
-                    playPrevious();
-                    break;
-                case 'ArrowRight':
-                    playNext();
-                    break;
-                case 'Escape':
-                    closeShareModal();
-                    break;
-                case 'm':
-                case 'M':
-                    toggleMute();
-                    break;
+        // Add CSS for animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
             }
-        });
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
         
-        console.log('🎬 VideoFlow Player carregado com sucesso!');
-        console.log('📋 Plataformas suportadas: YouTube, Vimeo, Dailymotion, Twitch, Google Drive, Upload local');
-        console.log('🛡️ AdBlock integrado para remover anúncios de embeds');
-        console.log('🔗 Sistema de compartilhamento de playlists');
-        console.log('💾 Upload de vídeos locais suportado');
+        // ===== INITIALIZE =====
+        window.addEventListener('DOMContentLoaded', init);
     </script>
 </body>
 </html>
