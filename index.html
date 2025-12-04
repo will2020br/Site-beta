@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SoundScroll - Seu Player TikTok</title>
+    <title>VideoFlow - Player Universal de Vídeo</title>
     <style>
         * {
             margin: 0;
@@ -13,652 +13,64 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            background: #0a0a0a;
             color: white;
-            overflow: hidden;
-            height: 100vh;
+            overflow-x: hidden;
         }
         
-        .music-container {
-            height: 100vh;
-            scroll-snap-type: y mandatory;
-            overflow-y: scroll;
-            position: relative;
-        }
-        
-        .music-track {
-            height: 100vh;
-            width: 100%;
-            scroll-snap-align: start;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
             padding: 20px;
-            background: linear-gradient(180deg, rgba(15,15,15,0.95) 0%, rgba(26,26,46,0.95) 100%);
         }
         
-        .track-wrapper {
-            width: 100%;
-            max-width: 550px;
-            height: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .player-container {
-            background: rgba(30, 30, 46, 0.9);
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .track-info {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .track-artwork {
-            width: 180px;
-            height: 180px;
-            border-radius: 15px;
-            margin: 0 auto 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            position: relative;
-        }
-        
-        .track-artwork img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .track-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 8px;
-            color: white;
-            text-shadow: 0 2px 10px rgba(255, 85, 0, 0.5);
-        }
-        
-        .track-artist {
-            font-size: 16px;
-            color: #cccccc;
-            margin-bottom: 5px;
-        }
-        
-        .track-platform {
-            display: inline-block;
-            padding: 4px 10px;
-            background: rgba(255, 85, 0, 0.2);
-            border-radius: 12px;
-            font-size: 12px;
-            color: #ff9500;
-            margin-top: 5px;
-        }
-        
-        .player-controls {
-            margin-top: 25px;
-        }
-        
-        /* Player nativo */
-        .native-player {
-            display: block;
-        }
-        
-        /* Player embed */
-        .embed-player {
-            display: none;
-        }
-        
-        .progress-container {
-            width: 100%;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin-bottom: 20px;
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, #ff5500, #ff9500);
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        
-        .time-display {
+        header {
             display: flex;
             justify-content: space-between;
-            font-size: 12px;
-            color: #aaa;
-            margin-top: 5px;
-        }
-        
-        .control-buttons {
-            display: flex;
-            justify-content: center;
             align-items: center;
-            gap: 25px;
-            margin-top: 20px;
-        }
-        
-        .control-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-        
-        .control-btn i {
-            font-size: 20px;
-        }
-        
-        .play-btn {
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            border-radius: 50%;
-            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
-        }
-        
-        .play-btn i {
-            font-size: 24px;
-        }
-        
-        .control-btn:hover {
-            transform: scale(1.1);
-        }
-        
-        .play-btn:hover {
-            box-shadow: 0 5px 20px rgba(255, 85, 0, 0.6);
-        }
-        
-        /* Embed container */
-        .embed-container {
-            width: 100%;
-            height: 250px;
-            border-radius: 12px;
-            overflow: hidden;
-            margin: 20px 0;
-            background: #1a1a2e;
-            position: relative;
-        }
-        
-        .embed-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        /* Empty state */
-        .empty-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            text-align: center;
-            padding: 40px;
-        }
-        
-        .empty-icon {
-            font-size: 80px;
-            color: rgba(255, 85, 0, 0.3);
+            padding: 20px 0;
+            border-bottom: 1px solid #333;
             margin-bottom: 30px;
         }
         
-        .empty-title {
+        .logo {
             font-size: 28px;
             font-weight: bold;
-            margin-bottom: 15px;
-            color: white;
+            background: linear-gradient(45deg, #ff0000, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
-        .empty-text {
-            font-size: 16px;
-            color: #aaa;
-            margin-bottom: 30px;
-            max-width: 400px;
-            line-height: 1.6;
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
         }
         
-        .get-started-btn {
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 15px 30px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
+        .adblock-toggle {
             display: flex;
             align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        
-        .get-started-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 85, 0, 0.4);
-        }
-        
-        /* Volume control */
-        .volume-control {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px 15px;
-            border-radius: 25px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .volume-slider {
-            width: 80px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        .volume-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ff5500;
-            cursor: pointer;
-        }
-        
-        /* Playlist Sidebar */
-        .playlist-sidebar {
-            position: fixed;
-            top: 0;
-            right: -400px;
-            width: 400px;
-            height: 100vh;
-            background: rgba(20, 20, 35, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 20px;
-            overflow-y: auto;
-            transition: right 0.3s ease;
-            z-index: 1000;
-            border-left: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .playlist-sidebar.open {
-            right: 0;
-        }
-        
-        .playlist-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        .playlist-title {
-            font-size: 22px;
-            font-weight: bold;
-            color: #ff5500;
-        }
-        
-        .close-playlist {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-        }
-        
-        .add-track-form {
-            margin-bottom: 25px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 20px;
-            border-radius: 12px;
-        }
-        
-        .input-group {
-            margin-bottom: 15px;
-        }
-        
-        .input-label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #ccc;
-        }
-        
-        .url-input, .embed-input {
-            width: 100%;
-            padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 85, 0, 0.3);
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-            margin-bottom: 10px;
-            font-family: monospace;
-        }
-        
-        .url-input::placeholder, .embed-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-        
-        .type-selector {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .type-btn {
-            flex: 1;
-            padding: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: white;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.3s;
-        }
-        
-        .type-btn.active {
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            border-color: transparent;
-        }
-        
-        .add-btn {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             gap: 8px;
-        }
-        
-        .add-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
-        }
-        
-        .playlist-tracks {
-            max-height: calc(100vh - 280px);
-            overflow-y: auto;
-        }
-        
-        .playlist-track {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 1px solid transparent;
-        }
-        
-        .playlist-track:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateX(-5px);
-        }
-        
-        .playlist-track.active {
-            background: rgba(255, 85, 0, 0.2);
-            border-color: rgba(255, 85, 0, 0.5);
-        }
-        
-        .playlist-track-artwork {
-            width: 50px;
-            height: 50px;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-right: 15px;
-            flex-shrink: 0;
-            position: relative;
-        }
-        
-        .playlist-track-artwork img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .platform-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            width: 20px;
-            height: 20px;
-            background: #ff5500;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 10px;
-        }
-        
-        .playlist-track-info {
-            flex: 1;
-            min-width: 0;
-        }
-        
-        .playlist-track-title {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .playlist-track-artist {
-            font-size: 12px;
-            color: #aaa;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .playlist-track-platform {
-            font-size: 10px;
-            color: #ff9500;
-            margin-top: 2px;
-        }
-        
-        .playlist-track-duration {
-            font-size: 12px;
-            color: #888;
-            margin-left: 10px;
-        }
-        
-        .remove-track {
-            background: none;
-            border: none;
-            color: #ff5555;
-            cursor: pointer;
-            padding: 5px;
-            margin-left: 10px;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-        }
-        
-        .remove-track:hover {
-            opacity: 1;
-        }
-        
-        /* Playlist toggle button */
-        .playlist-toggle {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            font-size: 20px;
-            cursor: pointer;
-            z-index: 100;
-            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
-            transition: all 0.3s;
-        }
-        
-        .playlist-toggle:hover {
-            transform: scale(1.1);
-            box-shadow: 0 5px 20px rgba(255, 85, 0, 0.6);
-        }
-        
-        /* Now playing indicator */
-        .now-playing {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #ff5500;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
+            background: #222;
             padding: 8px 15px;
             border-radius: 20px;
-            backdrop-filter: blur(10px);
-        }
-        
-        .now-playing-dot {
-            width: 8px;
-            height: 8px;
-            background: #ff5500;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; }
-        }
-        
-        /* Navigation dots */
-        .nav-dots {
-            position: fixed;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 100;
-        }
-        
-        .nav-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.2);
             cursor: pointer;
-            transition: all 0.3s;
         }
         
-        .nav-dot:hover {
-            transform: scale(1.3);
-        }
-        
-        .nav-dot.active {
-            background: #ff5500;
-            transform: scale(1.3);
-            box-shadow: 0 0 10px rgba(255, 85, 0, 0.5);
-        }
-        
-        /* Upload button */
-        .upload-btn {
-            position: fixed;
-            bottom: 80px;
-            left: 20px;
-            background: linear-gradient(45deg, #ff5500, #ff9500);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 12px 25px;
-            font-size: 14px;
-            cursor: pointer;
-            z-index: 100;
-            box-shadow: 0 5px 15px rgba(255, 85, 0, 0.4);
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(255, 85, 0, 0.6);
-        }
-        
-        .upload-input {
-            display: none;
-        }
-        
-        /* Auto-advance indicator */
-        .auto-advance {
-            position: fixed;
-            bottom: 20px;
-            right: 80px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 8px 15px;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
-            z-index: 100;
-        }
-        
-        .auto-advance-toggle {
-            position: relative;
+        .toggle-switch {
             width: 40px;
             height: 20px;
-            background: rgba(255, 255, 255, 0.2);
+            background: #444;
             border-radius: 10px;
-            cursor: pointer;
+            position: relative;
             transition: all 0.3s;
         }
         
-        .auto-advance-toggle.active {
-            background: #ff5500;
+        .toggle-switch.active {
+            background: #00ff00;
         }
         
-        .auto-advance-toggle::after {
+        .toggle-switch::after {
             content: '';
             position: absolute;
             top: 2px;
@@ -670,1153 +82,1069 @@
             transition: all 0.3s;
         }
         
-        .auto-advance-toggle.active::after {
+        .toggle-switch.active::after {
             left: 22px;
         }
         
-        /* Hide scrollbar */
-        .music-container::-webkit-scrollbar,
-        .playlist-tracks::-webkit-scrollbar {
-            width: 5px;
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: 30px;
+            min-height: 80vh;
         }
         
-        .music-container::-webkit-scrollbar-track,
-        .playlist-tracks::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-        }
-        
-        .music-container::-webkit-scrollbar-thumb,
-        .playlist-tracks::-webkit-scrollbar-thumb {
-            background: rgba(255, 85, 0, 0.5);
-            border-radius: 10px;
-        }
-        
-        .music-container::-webkit-scrollbar-thumb:hover,
-        .playlist-tracks::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 85, 0, 0.8);
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .playlist-sidebar {
-                width: 100%;
-                right: -100%;
-            }
-            
-            .playlist-sidebar.open {
-                right: 0;
-            }
-            
-            .track-wrapper {
-                max-width: 90%;
-            }
-            
-            .track-artwork {
-                width: 150px;
-                height: 150px;
-            }
-            
-            .embed-container {
-                height: 200px;
-            }
-            
-            .upload-btn {
-                bottom: 80px;
-                left: 50%;
-                transform: translateX(-50%);
-                white-space: nowrap;
-            }
-            
-            .volume-control {
-                bottom: 140px;
-            }
-            
-            .auto-advance {
-                bottom: 140px;
-                right: 20px;
-            }
-        }
-        
-        /* Platform colors */
-        .soundcloud { background: #ff5500; }
-        .youtube { background: #ff0000; }
-        .youtube-music { background: #ff0000; }
-        .spotify { background: #1DB954; }
-        .native { background: #4285f4; }
-        .custom { background: #9c27b0; }
-        .google-drive { background: #34A853; }
-        
-        /* Quick add buttons */
-        .quick-add {
-            position: fixed;
-            bottom: 140px;
-            right: 20px;
+        .video-player-section {
+            background: #111;
+            border-radius: 15px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
-            z-index: 100;
         }
         
-        .quick-add-btn {
+        .video-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            min-height: 500px;
+        }
+        
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-embed {
+            max-width: 100%;
+            max-height: 100%;
+            border: none;
+        }
+        
+        .empty-video {
+            text-align: center;
+            color: #666;
+        }
+        
+        .empty-video i {
+            font-size: 60px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+        
+        .video-info {
+            margin-top: 20px;
+            padding: 20px;
+            background: #1a1a1a;
+            border-radius: 10px;
+        }
+        
+        .video-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .video-meta {
+            display: flex;
+            gap: 20px;
+            color: #999;
+            font-size: 14px;
+        }
+        
+        .playlist-section {
+            background: #111;
+            border-radius: 15px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .playlist-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #333;
+        }
+        
+        .playlist-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        
+        .playlist-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
+            background: #222;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+        
+        .action-btn:hover {
+            background: #333;
+            transform: translateY(-2px);
+        }
+        
+        .action-btn.share {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+        }
+        
+        .add-video-form {
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .url-input {
+            width: 100%;
+            padding: 12px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .url-input::placeholder {
+            color: #666;
+        }
+        
+        .add-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #ff0000, #ff6b6b);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+        }
+        
+        .playlist-items {
+            flex: 1;
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #1a1a1a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+        
+        .playlist-item:hover {
+            background: #222;
+            transform: translateX(5px);
+        }
+        
+        .playlist-item.active {
+            background: #2a2a2a;
+            border-color: #ff0000;
+        }
+        
+        .item-number {
+            width: 30px;
+            height: 30px;
+            background: #333;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .item-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .item-platform {
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .item-duration {
+            font-size: 12px;
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .remove-btn {
+            background: none;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            padding: 5px;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        
+        .remove-btn:hover {
+            opacity: 1;
+        }
+        
+        /* Modal de compartilhamento */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #111;
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+        }
+        
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .share-link {
+            background: #222;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        
+        .copy-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Notificação */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #00ff00;
+            color: #000;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+            display: none;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Player controls */
+        .player-controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        
+        .control-btn {
             width: 50px;
             height: 50px;
             border-radius: 50%;
             border: none;
+            background: #222;
+            color: white;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            color: white;
+            font-size: 20px;
             transition: all 0.3s;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
         }
         
-        .quick-add-btn:hover {
+        .control-btn:hover {
+            background: #333;
             transform: scale(1.1);
         }
         
-        .quick-add-btn.youtube-music {
-            background: #ff0000;
+        /* AdBlock status */
+        .adblock-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            z-index: 10;
         }
         
-        .quick-add-btn.google-drive {
-            background: #34A853;
+        .adblock-status.active {
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
         }
         
-        .quick-add-btn.soundcloud {
-            background: #ff5500;
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .video-wrapper {
+                min-height: 400px;
+            }
         }
         
-        .quick-add-btn.spotify {
-            background: #1DB954;
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .video-wrapper {
+                min-height: 300px;
+            }
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #111;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
         }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <!-- Now Playing Indicator -->
-    <div class="now-playing" id="nowPlaying" style="display: none;">
-        <div class="now-playing-dot"></div>
-        <span id="nowPlayingText">Tocando agora</span>
-    </div>
-    
-    <!-- Playlist Toggle Button -->
-    <button class="playlist-toggle" onclick="togglePlaylist()">
-        <i class="fas fa-list-music"></i>
-    </button>
-    
-    <!-- Quick Add Buttons -->
-    <div class="quick-add" id="quickAdd" style="display: none;">
-        <button class="quick-add-btn youtube-music" title="YouTube Music" onclick="quickAddPlatform('youtube-music')">
-            <i class="fab fa-youtube"></i>
-        </button>
-        <button class="quick-add-btn google-drive" title="Google Drive" onclick="quickAddPlatform('google-drive')">
-            <i class="fab fa-google-drive"></i>
-        </button>
-        <button class="quick-add-btn soundcloud" title="SoundCloud" onclick="quickAddPlatform('soundcloud')">
-            <i class="fab fa-soundcloud"></i>
-        </button>
-        <button class="quick-add-btn spotify" title="Spotify" onclick="quickAddPlatform('spotify')">
-            <i class="fab fa-spotify"></i>
-        </button>
-    </div>
-    
-    <!-- Upload Button -->
-    <button class="upload-btn" onclick="document.getElementById('audioUpload').click()">
-        <i class="fas fa-upload"></i> Upload MP3
-    </button>
-    <input type="file" id="audioUpload" class="upload-input" accept="audio/*" multiple onchange="handleAudioUpload(event)">
-    
-    <!-- Auto-Advance Toggle -->
-    <div class="auto-advance" id="autoAdvance" style="display: none;">
-        <span style="font-size: 12px;">Auto-advance:</span>
-        <div class="auto-advance-toggle active" id="autoAdvanceToggle" onclick="toggleAutoAdvance()"></div>
-    </div>
-    
-    <!-- Navigation Dots -->
-    <div class="nav-dots" id="navDots" style="display: none;"></div>
-    
-    <!-- Volume Control -->
-    <div class="volume-control" id="volumeControl" style="display: none;">
-        <i class="fas fa-volume-up" style="color: #ff5500;"></i>
-        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="100" value="50">
-    </div>
-    
-    <!-- Main Audio Player (Hidden) -->
-    <audio id="mainAudioPlayer" class="hidden-audio" preload="metadata"></audio>
-    
-    <!-- Music Container -->
-    <div class="music-container" id="musicContainer">
-        <!-- Empty State -->
-        <div class="empty-state" id="emptyState">
-            <div class="empty-icon">
-                <i class="fas fa-music"></i>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-play-circle"></i> VideoFlow
             </div>
-            <h1 class="empty-title">Seu Player TikTok Está Vazio</h1>
-            <p class="empty-text">
-                Adicione suas músicas para começar a usar o player estilo TikTok com scroll vertical.<br>
-                Suporta MP3, YouTube Music, Google Drive, SoundCloud, Spotify e muito mais!
-            </p>
-            <button class="get-started-btn" onclick="togglePlaylist()">
-                <i class="fas fa-plus"></i> Adicionar Primeira Música
-            </button>
-        </div>
-        
-        <!-- Tracks will be loaded here -->
-    </div>
-    
-    <!-- Playlist Sidebar -->
-    <div class="playlist-sidebar" id="playlistSidebar">
-        <div class="playlist-header">
-            <h2 class="playlist-title"><i class="fas fa-music"></i> Sua Playlist</h2>
-            <button class="close-playlist" onclick="togglePlaylist()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <div class="add-track-form">
-            <div class="type-selector">
-                <button class="type-btn active" id="typeUrl" onclick="selectType('url')">URL ou Link</button>
-                <button class="type-btn" id="typeEmbed" onclick="selectType('embed')">Código Embed</button>
-            </div>
-            
-            <div class="input-group" id="urlInputGroup">
-                <label class="input-label">Cole o link da música:</label>
-                <input type="text" class="url-input" id="trackUrl" 
-                       placeholder="https://music.youtube.com/... ou https://drive.google.com/...">
-                <div style="font-size: 12px; color: #888; margin-top: 5px;">
-                    Suporta: YouTube Music, Google Drive, SoundCloud, Spotify, MP3 direto
+            <div class="controls">
+                <div class="adblock-toggle" onclick="toggleAdBlock()">
+                    <span>AdBlock</span>
+                    <div class="toggle-switch active" id="adblockToggle"></div>
                 </div>
             </div>
-            
-            <div class="input-group" id="embedInputGroup" style="display: none;">
-                <label class="input-label">Cole o código embed completo:</label>
-                <textarea class="embed-input" id="trackEmbed" rows="4" 
-placeholder="<iframe src='...'></iframe>"></textarea>
-            </div>
-            
-            <button class="add-btn" onclick="addTrack()">
-                <i class="fas fa-plus"></i> Adicionar à Playlist
-            </button>
-        </div>
+        </header>
         
-        <div class="playlist-tracks" id="playlistTracks">
-            <!-- Playlist will be loaded here -->
+        <div class="main-content">
+            <!-- Player Section -->
+            <section class="video-player-section">
+                <div class="video-wrapper">
+                    <div class="adblock-status active" id="adblockStatus">
+                        <i class="fas fa-shield-alt"></i> AdBlock Ativo
+                    </div>
+                    
+                    <div class="video-container" id="videoContainer">
+                        <div class="empty-video">
+                            <i class="fas fa-video"></i>
+                            <h3>Nenhum vídeo selecionado</h3>
+                            <p>Adicione vídeos à playlist para começar</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="video-info" id="videoInfo" style="display: none;">
+                    <h2 class="video-title" id="currentVideoTitle">Título do Vídeo</h2>
+                    <div class="video-meta">
+                        <span id="currentVideoPlatform">YouTube</span>
+                        <span id="currentVideoDuration">0:00</span>
+                    </div>
+                </div>
+                
+                <div class="player-controls" id="playerControls" style="display: none;">
+                    <button class="control-btn" onclick="playPrevious()">
+                        <i class="fas fa-step-backward"></i>
+                    </button>
+                    <button class="control-btn" onclick="togglePlayPause()" id="playPauseBtn">
+                        <i class="fas fa-play"></i>
+                    </button>
+                    <button class="control-btn" onclick="playNext()">
+                        <i class="fas fa-step-forward"></i>
+                    </button>
+                </div>
+            </section>
+            
+            <!-- Playlist Section -->
+            <section class="playlist-section">
+                <div class="playlist-header">
+                    <h2 class="playlist-title">
+                        <i class="fas fa-list"></i> Playlist
+                    </h2>
+                    <div class="playlist-actions">
+                        <button class="action-btn" onclick="clearPlaylist()">
+                            <i class="fas fa-trash"></i> Limpar
+                        </button>
+                        <button class="action-btn share" onclick="sharePlaylist()">
+                            <i class="fas fa-share"></i> Compartilhar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="add-video-form">
+                    <div class="input-group">
+                        <label class="input-label">Cole o link do vídeo:</label>
+                        <input type="text" class="url-input" id="videoUrl" 
+                               placeholder="https://youtube.com/watch?v=... ou https://vimeo.com/...">
+                    </div>
+                    <button class="add-btn" onclick="addVideo()">
+                        <i class="fas fa-plus"></i> Adicionar Vídeo
+                    </button>
+                </div>
+                
+                <div class="playlist-items" id="playlistItems">
+                    <!-- Playlist items will be added here -->
+                </div>
+            </section>
         </div>
     </div>
+    
+    <!-- Share Modal -->
+    <div class="modal" id="shareModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-share-alt"></i> Compartilhar Playlist
+                </h3>
+                <button class="close-modal" onclick="closeShareModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p>Compartilhe este link para que outras pessoas possam acessar sua playlist:</p>
+            <div class="share-link" id="shareLink">
+                Carregando...
+            </div>
+            <button class="copy-btn" onclick="copyShareLink()">
+                <i class="fas fa-copy"></i> Copiar Link
+            </button>
+        </div>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
 
     <script>
-        // Player state
-        let currentAudio = document.getElementById('mainAudioPlayer');
-        let currentTrackIndex = 0;
-        let isPlaying = false;
+        // State management
         let playlist = [];
-        let currentTrackType = 'url';
-        let autoAdvance = true;
+        let currentVideoIndex = 0;
+        let isAdBlockEnabled = true;
+        let isPlaying = false;
+        let shareableLink = '';
         
-        // DOM elements
-        const musicContainer = document.getElementById('musicContainer');
-        const playlistSidebar = document.getElementById('playlistSidebar');
-        const playlistTracks = document.getElementById('playlistTracks');
-        const trackUrlInput = document.getElementById('trackUrl');
-        const trackEmbedInput = document.getElementById('trackEmbed');
-        const volumeSlider = document.getElementById('volumeSlider');
-        const nowPlayingText = document.getElementById('nowPlayingText');
-        const nowPlaying = document.getElementById('nowPlaying');
-        const navDots = document.getElementById('navDots');
-        const autoAdvanceToggle = document.getElementById('autoAdvanceToggle');
-        const autoAdvanceControl = document.getElementById('autoAdvance');
-        const volumeControl = document.getElementById('volumeControl');
-        const quickAdd = document.getElementById('quickAdd');
-        const emptyState = document.getElementById('emptyState');
+        // DOM Elements
+        const videoContainer = document.getElementById('videoContainer');
+        const playlistItems = document.getElementById('playlistItems');
+        const videoUrlInput = document.getElementById('videoUrl');
+        const adblockToggle = document.getElementById('adblockToggle');
+        const adblockStatus = document.getElementById('adblockStatus');
+        const videoInfo = document.getElementById('videoInfo');
+        const playerControls = document.getElementById('playerControls');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const shareModal = document.getElementById('shareModal');
+        const shareLink = document.getElementById('shareLink');
+        const notification = document.getElementById('notification');
         
-        // Initialize player
-        function initPlayer() {
-            // Start with empty playlist
-            playlist = [];
-            
-            // Setup audio event listeners
-            setupAudioEvents();
-            
-            // Setup message listener for embeds
-            setupEmbedMessageListener();
-            
-            console.log('🎵 SoundScroll Player iniciado!');
-            console.log('📋 Playlist vazia - Pronto para adicionar músicas');
-        }
+        // Platform detection and embed generation
+        const platformConfigs = {
+            'youtube': {
+                regex: /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+                embed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1&showinfo=0"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                `,
+                cleanEmbed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0"
+                        frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                `
+            },
+            'vimeo': {
+                regex: /vimeo\.com\/([0-9]+)/,
+                embed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://player.vimeo.com/video/${id}?autoplay=1&title=0&byline=0&portrait=0"
+                        frameborder="0"
+                        allow="autoplay; fullscreen; picture-in-picture"
+                        allowfullscreen>
+                    </iframe>
+                `
+            },
+            'dailymotion': {
+                regex: /dailymotion\.com\/video\/([a-zA-Z0-9]+)/,
+                embed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://www.dailymotion.com/embed/video/${id}?autoplay=1"
+                        frameborder="0"
+                        allowfullscreen>
+                    </iframe>
+                `
+            },
+            'twitch': {
+                regex: /twitch\.tv\/videos\/([0-9]+)/,
+                embed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://player.twitch.tv/?video=${id}&parent=${window.location.hostname}&autoplay=true"
+                        frameborder="0"
+                        allowfullscreen>
+                    </iframe>
+                `
+            }
+        };
         
-        // Setup audio event listeners
-        function setupAudioEvents() {
-            currentAudio.addEventListener('timeupdate', updateProgress);
-            currentAudio.addEventListener('ended', handleAudioEnded);
-            currentAudio.addEventListener('loadedmetadata', updateDurationDisplay);
-            currentAudio.addEventListener('error', handleAudioError);
-            
-            // Volume control
-            volumeSlider.addEventListener('input', (e) => {
-                currentAudio.volume = e.target.value / 100;
-            });
-        }
-        
-        // Setup embed message listener
-        function setupEmbedMessageListener() {
-            window.addEventListener('message', (e) => {
-                try {
-                    const data = JSON.parse(e.data);
-                    
-                    // SoundCloud messages
-                    if (e.origin.includes('soundcloud.com')) {
-                        handleSoundCloudMessage(data);
-                    }
-                    
-                    // YouTube messages
-                    if (e.origin.includes('youtube.com')) {
-                        handleYouTubeMessage(data);
-                    }
-                    
-                } catch (err) {
-                    // Not a JSON message, ignore
+        // Initialize
+        function init() {
+            // Load playlist from localStorage if exists
+            const savedPlaylist = localStorage.getItem('videoflow_playlist');
+            if (savedPlaylist) {
+                playlist = JSON.parse(savedPlaylist);
+                renderPlaylist();
+                if (playlist.length > 0) {
+                    playVideo(0);
                 }
-            });
+            }
+            
+            console.log('🎬 VideoFlow Player inicializado');
         }
         
-        // Handle SoundCloud messages
-        function handleSoundCloudMessage(data) {
-            const track = playlist[currentTrackIndex];
-            if (!track || track.type !== 'embed' || track.platform !== 'soundcloud') return;
+        // Add video to playlist
+        function addVideo() {
+            const url = videoUrlInput.value.trim();
             
-            // Track ended
-            if (data.method === 'ended') {
-                handleEmbedEnded();
+            if (!url) {
+                showNotification('Por favor, cole um link de vídeo!', 'error');
+                return;
+            }
+            
+            // Detect platform and extract video ID
+            let videoData = null;
+            
+            for (const [platform, config] of Object.entries(platformConfigs)) {
+                const match = url.match(config.regex);
+                if (match) {
+                    const videoId = match[1];
+                    const title = prompt('Título do vídeo:', `Vídeo do ${platform.charAt(0).toUpperCase() + platform.slice(1)}`) || 
+                                 `Vídeo do ${platform.charAt(0).toUpperCase() + platform.slice(1)}`;
+                    const duration = prompt('Duração (opcional, ex: 5:30):', '') || '';
+                    
+                    videoData = {
+                        id: Date.now(),
+                        url: url,
+                        videoId: videoId,
+                        platform: platform,
+                        title: title,
+                        duration: duration,
+                        thumbnail: getThumbnailUrl(platform, videoId)
+                    };
+                    break;
+                }
+            }
+            
+            if (!videoData) {
+                // Try to handle as generic embed
+                if (url.includes('<iframe')) {
+                    const title = prompt('Título do vídeo:', 'Vídeo Embed') || 'Vídeo Embed';
+                    const duration = prompt('Duração (opcional):', '') || '';
+                    
+                    videoData = {
+                        id: Date.now(),
+                        url: url,
+                        platform: 'custom',
+                        title: title,
+                        duration: duration,
+                        embedCode: url
+                    };
+                } else {
+                    showNotification('Link de vídeo não suportado!', 'error');
+                    return;
+                }
+            }
+            
+            playlist.push(videoData);
+            savePlaylist();
+            renderPlaylist();
+            
+            // Clear input
+            videoUrlInput.value = '';
+            
+            // Auto-play first video
+            if (playlist.length === 1) {
+                playVideo(0);
+            }
+            
+            showNotification('Vídeo adicionado à playlist!');
+        }
+        
+        // Get thumbnail URL
+        function getThumbnailUrl(platform, videoId) {
+            switch(platform) {
+                case 'youtube':
+                    return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+                case 'vimeo':
+                    return `https://vumbnail.com/${videoId}.jpg`;
+                default:
+                    return '';
             }
         }
         
-        // Handle YouTube messages
-        function handleYouTubeMessage(data) {
-            if (data.event === 'onStateChange') {
-                const track = playlist[currentTrackIndex];
-                if (!track || track.type !== 'embed' || track.platform !== 'youtube') return;
+        // Render playlist
+        function renderPlaylist() {
+            playlistItems.innerHTML = '';
+            
+            if (playlist.length === 0) {
+                playlistItems.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <i class="fas fa-video" style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;"></i>
+                        <p>Sua playlist está vazia</p>
+                        <p style="font-size: 12px; margin-top: 10px;">Adicione seu primeiro vídeo!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            playlist.forEach((video, index) => {
+                const item = document.createElement('div');
+                item.className = `playlist-item ${index === currentVideoIndex ? 'active' : ''}`;
+                item.dataset.index = index;
+                item.onclick = () => playVideo(index);
                 
-                // Track ended (state 0 = ended)
-                if (data.info === 0) {
-                    handleEmbedEnded();
+                item.innerHTML = `
+                    <div class="item-number">${index + 1}</div>
+                    <div class="item-info">
+                        <div class="item-title">${video.title}</div>
+                        <div class="item-platform">${video.platform.charAt(0).toUpperCase() + video.platform.slice(1)}</div>
+                    </div>
+                    <div class="item-duration">${video.duration || '?'}</div>
+                    <button class="remove-btn" onclick="removeVideo(${video.id}, event)">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                
+                playlistItems.appendChild(item);
+            });
+        }
+        
+        // Play video
+        function playVideo(index) {
+            if (index < 0 || index >= playlist.length) return;
+            
+            currentVideoIndex = index;
+            const video = playlist[index];
+            
+            // Update UI
+            renderPlaylist();
+            updateVideoInfo(video);
+            
+            // Generate embed with AdBlock
+            let embedHtml = '';
+            
+            if (video.platform === 'custom') {
+                embedHtml = applyAdBlockFilters(video.embedCode);
+            } else {
+                const config = platformConfigs[video.platform];
+                if (config) {
+                    if (isAdBlockEnabled && video.platform === 'youtube' && config.cleanEmbed) {
+                        embedHtml = config.cleanEmbed(video.videoId);
+                    } else {
+                        embedHtml = config.embed(video.videoId);
+                    }
+                }
+            }
+            
+            // Apply additional AdBlock filters
+            embedHtml = applyAdBlockFilters(embedHtml);
+            
+            // Display video
+            videoContainer.innerHTML = embedHtml;
+            videoInfo.style.display = 'block';
+            playerControls.style.display = 'flex';
+            
+            // Auto-play
+            setTimeout(() => {
+                try {
+                    const iframe = videoContainer.querySelector('iframe');
+                    if (iframe && iframe.contentWindow) {
+                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                    }
+                } catch (e) {
+                    console.log('Auto-play não suportado');
+                }
+            }, 1000);
+            
+            // Save last played
+            localStorage.setItem('videoflow_last_played', index);
+        }
+        
+        // Apply AdBlock filters
+        function applyAdBlockFilters(html) {
+            if (!isAdBlockEnabled) return html;
+            
+            // Remove common ad elements
+            let cleanHtml = html
+                .replace(/ads\.[^"']+/gi, 'blocked-ad-server')
+                .replace(/doubleclick\.net/gi, 'blocked-ad-server')
+                .replace(/googlesyndication\.com/gi, 'blocked-ad-server')
+                .replace(/adserver\.[^"']+/gi, 'blocked-ad-server')
+                .replace(/(\?|&)ad(s?)=[^&"]*/gi, '')
+                .replace(/show_ads=[^&"]*/gi, '')
+                .replace(/pre-roll=[^&"]*/gi, '');
+            
+            // Add no-cookie domains where possible
+            if (cleanHtml.includes('youtube.com/embed')) {
+                cleanHtml = cleanHtml.replace('youtube.com', 'youtube-nocookie.com');
+            }
+            
+            return cleanHtml;
+        }
+        
+        // Update video info
+        function updateVideoInfo(video) {
+            document.getElementById('currentVideoTitle').textContent = video.title;
+            document.getElementById('currentVideoPlatform').textContent = 
+                video.platform.charAt(0).toUpperCase() + video.platform.slice(1);
+            document.getElementById('currentVideoDuration').textContent = video.duration || '?';
+        }
+        
+        // Toggle AdBlock
+        function toggleAdBlock() {
+            isAdBlockEnabled = !isAdBlockEnabled;
+            adblockToggle.classList.toggle('active', isAdBlockEnabled);
+            adblockStatus.classList.toggle('active', isAdBlockEnabled);
+            adblockStatus.innerHTML = isAdBlockEnabled ? 
+                '<i class="fas fa-shield-alt"></i> AdBlock Ativo' : 
+                '<i class="fas fa-shield"></i> AdBlock Inativo';
+            
+            showNotification(isAdBlockEnabled ? 'AdBlock ativado!' : 'AdBlock desativado');
+            
+            // Re-render current video with new AdBlock setting
+            if (playlist.length > 0) {
+                playVideo(currentVideoIndex);
+            }
+        }
+        
+        // Remove video
+        function removeVideo(videoId, event) {
+            event.stopPropagation();
+            
+            const index = playlist.findIndex(v => v.id === videoId);
+            if (index === -1) return;
+            
+            playlist.splice(index, 1);
+            
+            // Adjust current video index
+            if (index === currentVideoIndex) {
+                if (playlist.length > 0) {
+                    playVideo(Math.min(index, playlist.length - 1));
+                } else {
+                    // No videos left
+                    videoContainer.innerHTML = `
+                        <div class="empty-video">
+                            <i class="fas fa-video"></i>
+                            <h3>Nenhum vídeo selecionado</h3>
+                            <p>Adicione vídeos à playlist para começar</p>
+                        </div>
+                    `;
+                    videoInfo.style.display = 'none';
+                    playerControls.style.display = 'none';
+                    currentVideoIndex = 0;
+                }
+            } else if (index < currentVideoIndex) {
+                currentVideoIndex--;
+            }
+            
+            savePlaylist();
+            renderPlaylist();
+            showNotification('Vídeo removido');
+        }
+        
+        // Clear playlist
+        function clearPlaylist() {
+            if (!playlist.length) return;
+            
+            if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
+                playlist = [];
+                currentVideoIndex = 0;
+                savePlaylist();
+                renderPlaylist();
+                
+                videoContainer.innerHTML = `
+                    <div class="empty-video">
+                        <i class="fas fa-video"></i>
+                        <h3>Nenhum vídeo selecionado</h3>
+                        <p>Adicione vídeos à playlist para começar</p>
+                    </div>
+                `;
+                videoInfo.style.display = 'none';
+                playerControls.style.display = 'none';
+                
+                showNotification('Playlist limpa');
+            }
+        }
+        
+        // Player controls
+        function playPrevious() {
+            if (playlist.length === 0) return;
+            const prevIndex = (currentVideoIndex - 1 + playlist.length) % playlist.length;
+            playVideo(prevIndex);
+        }
+        
+        function playNext() {
+            if (playlist.length === 0) return;
+            const nextIndex = (currentVideoIndex + 1) % playlist.length;
+            playVideo(nextIndex);
+        }
+        
+        function togglePlayPause() {
+            if (playlist.length === 0) return;
+            
+            const iframe = videoContainer.querySelector('iframe');
+            if (!iframe) return;
+            
+            try {
+                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+                isPlaying = !isPlaying;
+            } catch (e) {
+                console.log('Play/Pause não suportado');
+            }
+        }
+        
+        // Share playlist
+        function sharePlaylist() {
+            if (playlist.length === 0) {
+                showNotification('Adicione vídeos à playlist antes de compartilhar!', 'error');
+                return;
+            }
+            
+            // Generate shareable data
+            const playlistData = {
+                videos: playlist.map(v => ({
+                    url: v.url,
+                    title: v.title,
+                    platform: v.platform,
+                    duration: v.duration
+                })),
+                timestamp: Date.now(),
+                adBlockEnabled: isAdBlockEnabled
+            };
+            
+            // Encode data to base64 for URL
+            const encodedData = btoa(JSON.stringify(playlistData));
+            shareableLink = `${window.location.origin}${window.location.pathname}?playlist=${encodedData}`;
+            
+            // Update modal
+            shareLink.textContent = shareableLink;
+            shareModal.style.display = 'flex';
+        }
+        
+        // Close share modal
+        function closeShareModal() {
+            shareModal.style.display = 'none';
+        }
+        
+        // Copy share link
+        function copyShareLink() {
+            navigator.clipboard.writeText(shareableLink)
+                .then(() => {
+                    showNotification('Link copiado para a área de transferência!');
+                    closeShareModal();
+                })
+                .catch(() => {
+                    showNotification('Erro ao copiar link', 'error');
+                });
+        }
+        
+        // Load shared playlist
+        function loadSharedPlaylist() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const playlistParam = urlParams.get('playlist');
+            
+            if (playlistParam) {
+                try {
+                    const playlistData = JSON.parse(atob(playlistParam));
+                    playlist = playlistData.videos.map((v, i) => ({
+                        id: Date.now() + i,
+                        url: v.url,
+                        title: v.title,
+                        platform: v.platform,
+                        duration: v.duration,
+                        videoId: extractVideoId(v.url, v.platform)
+                    }));
+                    
+                    if (playlistData.adBlockEnabled !== undefined) {
+                        isAdBlockEnabled = playlistData.adBlockEnabled;
+                        adblockToggle.classList.toggle('active', isAdBlockEnabled);
+                        adblockStatus.classList.toggle('active', isAdBlockEnabled);
+                        adblockStatus.innerHTML = isAdBlockEnabled ? 
+                            '<i class="fas fa-shield-alt"></i> AdBlock Ativo' : 
+                            '<i class="fas fa-shield"></i> AdBlock Inativo';
+                    }
+                    
+                    savePlaylist();
+                    renderPlaylist();
+                    
+                    if (playlist.length > 0) {
+                        playVideo(0);
+                    }
+                    
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    
+                    showNotification('Playlist compartilhada carregada!');
+                } catch (e) {
+                    console.error('Erro ao carregar playlist:', e);
+                    showNotification('Erro ao carregar playlist compartilhada', 'error');
                 }
             }
         }
         
-        // Handle audio ended
-        function handleAudioEnded() {
-            console.log('Áudio terminou, avançando para próxima...');
-            if (autoAdvance) {
-                playNext();
+        // Extract video ID from URL
+        function extractVideoId(url, platform) {
+            const config = platformConfigs[platform];
+            if (config) {
+                const match = url.match(config.regex);
+                return match ? match[1] : null;
             }
+            return null;
         }
         
-        // Handle embed ended
-        function handleEmbedEnded() {
-            console.log('Embed terminou, avançando para próxima...');
-            
-            if (autoAdvance) {
-                setTimeout(() => {
-                    playNext();
-                }, 500);
-            }
-        }
-        
-        // Toggle auto-advance
-        function toggleAutoAdvance() {
-            autoAdvance = !autoAdvance;
-            autoAdvanceToggle.classList.toggle('active', autoAdvance);
-            
-            // Show notification
-            const message = autoAdvance ? 'Auto-advance ativado' : 'Auto-advance desativado';
-            showNotification(message);
+        // Save playlist to localStorage
+        function savePlaylist() {
+            localStorage.setItem('videoflow_playlist', JSON.stringify(playlist));
         }
         
         // Show notification
-        function showNotification(message) {
-            const notification = document.createElement('div');
+        function showNotification(message, type = 'success') {
             notification.textContent = message;
-            notification.style.cssText = `
-                position: fixed;
-                bottom: 180px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(255, 85, 0, 0.9);
-                color: white;
-                padding: 10px 20px;
-                border-radius: 20px;
-                z-index: 10000;
-                font-size: 14px;
-                backdrop-filter: blur(10px);
-                animation: fadeInOut 2s ease;
-            `;
-            
-            document.body.appendChild(notification);
+            notification.style.background = type === 'error' ? '#ff6b6b' : '#00ff00';
+            notification.style.color = type === 'error' ? 'white' : '#000';
+            notification.style.display = 'block';
             
             setTimeout(() => {
-                notification.remove();
-            }, 2000);
+                notification.style.display = 'none';
+            }, 3000);
         }
         
-        // Select input type
-        function selectType(type) {
-            currentTrackType = type;
-            
-            // Update buttons
-            document.getElementById('typeUrl').classList.toggle('active', type === 'url');
-            document.getElementById('typeEmbed').classList.toggle('active', type === 'embed');
-            
-            // Show/hide inputs
-            document.getElementById('urlInputGroup').style.display = type === 'url' ? 'block' : 'none';
-            document.getElementById('embedInputGroup').style.display = type === 'embed' ? 'block' : 'none';
-        }
-        
-        // Quick add platform
-        function quickAddPlatform(platform) {
-            selectType('url');
-            let placeholder = '';
-            
-            switch(platform) {
-                case 'youtube-music':
-                    placeholder = 'https://music.youtube.com/watch?v=...';
-                    break;
-                case 'google-drive':
-                    placeholder = 'https://drive.google.com/file/d/.../view';
-                    break;
-                case 'soundcloud':
-                    placeholder = 'https://soundcloud.com/...';
-                    break;
-                case 'spotify':
-                    placeholder = 'https://open.spotify.com/track/...';
-                    break;
-            }
-            
-            trackUrlInput.placeholder = placeholder;
-            trackUrlInput.focus();
-            togglePlaylist();
-        }
-        
-        // Update UI based on playlist state
-        function updateUIState() {
-            const hasTracks = playlist.length > 0;
-            
-            // Show/hide controls
-            nowPlaying.style.display = hasTracks ? 'flex' : 'none';
-            navDots.style.display = hasTracks ? 'flex' : 'none';
-            autoAdvanceControl.style.display = hasTracks ? 'flex' : 'none';
-            volumeControl.style.display = hasTracks ? 'flex' : 'none';
-            quickAdd.style.display = hasTracks ? 'flex' : 'none';
-            emptyState.style.display = hasTracks ? 'none' : 'flex';
-        }
-        
-        // Render tracks in main container
-        function renderTracks() {
-            musicContainer.innerHTML = '';
-            
-            if (playlist.length === 0) {
-                musicContainer.appendChild(emptyState.cloneNode(true));
-                updateUIState();
-                return;
-            }
-            
-            playlist.forEach((track, index) => {
-                const trackElement = createTrackElement(track, index);
-                musicContainer.appendChild(trackElement);
-            });
-            
-            updateUIState();
-        }
-        
-        // Create track element
-        function createTrackElement(track, index) {
-            const trackElement = document.createElement('div');
-            trackElement.className = 'music-track';
-            trackElement.dataset.id = track.id;
-            trackElement.dataset.index = index;
-            trackElement.dataset.type = track.type;
-            
-            if (track.type === 'audio') {
-                trackElement.innerHTML = `
-                    <div class="track-wrapper">
-                        <div class="player-container">
-                            <div class="track-info">
-                                <div class="track-artwork">
-                                    <img src="${track.artwork}" alt="${track.title}" 
-                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'">
-                                </div>
-                                <h1 class="track-title">${track.title}</h1>
-                                <p class="track-artist">${track.artist}</p>
-                                <p class="track-album">${track.album}</p>
-                                <span class="track-platform">${track.platform}</span>
-                            </div>
-                            
-                            <div class="player-controls native-player">
-                                <div class="progress-container" onclick="seekTrack(event)">
-                                    <div class="progress-bar" id="progress-${track.id}"></div>
-                                </div>
-                                <div class="time-display">
-                                    <span id="currentTime">0:00</span>
-                                    <span id="duration">${track.duration}</span>
-                                </div>
-                                
-                                <div class="control-buttons">
-                                    <button class="control-btn" onclick="playPrev()">
-                                        <i class="fas fa-step-backward"></i>
-                                    </button>
-                                    <button class="control-btn play-btn" id="playBtn" onclick="togglePlayPause()">
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    <button class="control-btn" onclick="playNext()">
-                                        <i class="fas fa-step-forward"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            } else if (track.type === 'embed') {
-                trackElement.innerHTML = `
-                    <div class="track-wrapper">
-                        <div class="player-container">
-                            <div class="track-info">
-                                <div class="track-artwork">
-                                    <img src="${track.artwork}" alt="${track.title}" 
-                                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop'">
-                                </div>
-                                <h1 class="track-title">${track.title}</h1>
-                                <p class="track-artist">${track.artist}</p>
-                                <p class="track-album">${track.album}</p>
-                                <span class="track-platform">${track.platform}</span>
-                            </div>
-                            
-                            <div class="embed-player">
-                                <div class="embed-container" id="embed-${track.id}">
-                                    ${track.embedCode}
-                                </div>
-                                
-                                <div class="control-buttons">
-                                    <button class="control-btn" onclick="playPrev()">
-                                        <i class="fas fa-step-backward"></i>
-                                    </button>
-                                    <button class="control-btn" onclick="toggleEmbedPlay(${track.id})">
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    <button class="control-btn" onclick="playNext()">
-                                        <i class="fas fa-step-forward"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            return trackElement;
-        }
-        
-        // Render playlist in sidebar
-        function renderPlaylist() {
-            playlistTracks.innerHTML = '';
-            
-            if (playlist.length === 0) {
-                playlistTracks.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #888;">
-                        <i class="fas fa-music" style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <p>Sua playlist está vazia</p>
-                        <p style="font-size: 12px; margin-top: 10px;">Adicione sua primeira música!</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            playlist.forEach((track, index) => {
-                const trackElement = createPlaylistTrackElement(track, index);
-                playlistTracks.appendChild(trackElement);
-            });
-        }
-        
-        // Create playlist track element
-        function createPlaylistTrackElement(track, index) {
-            const trackElement = document.createElement('div');
-            trackElement.className = `playlist-track ${index === currentTrackIndex ? 'active' : ''}`;
-            trackElement.dataset.index = index;
-            trackElement.onclick = () => playTrack(index);
-            
-            trackElement.innerHTML = `
-                <div class="playlist-track-artwork">
-                    <img src="${track.artwork}" alt="${track.title}"
-                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop'">
-                    <div class="platform-badge ${track.platform}">
-                        <i class="fas fa-${getPlatformIcon(track.platform)}"></i>
-                    </div>
-                </div>
-                <div class="playlist-track-info">
-                    <div class="playlist-track-title">${track.title}</div>
-                    <div class="playlist-track-artist">${track.artist}</div>
-                    <div class="playlist-track-platform">${track.platform} • ${track.type}</div>
-                </div>
-                <div class="playlist-track-duration">${track.duration}</div>
-                <button class="remove-track" onclick="removeTrack(${track.id}, event)">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            
-            return trackElement;
-        }
-        
-        // Get platform icon
-        function getPlatformIcon(platform) {
-            switch(platform) {
-                case 'soundcloud': return 'cloud';
-                case 'youtube': return 'youtube';
-                case 'youtube-music': return 'youtube';
-                case 'spotify': return 'spotify';
-                case 'google-drive': return 'google-drive';
-                case 'native': return 'music';
-                default: return 'headphones';
-            }
-        }
-        
-        // Create navigation dots
-        function createNavDots() {
-            navDots.innerHTML = '';
-            
-            playlist.forEach((_, index) => {
-                const dot = document.createElement('div');
-                dot.className = `nav-dot ${index === currentTrackIndex ? 'active' : ''}`;
-                dot.onclick = () => playTrack(index);
-                navDots.appendChild(dot);
-            });
-        }
-        
-        // Play a specific track
-        async function playTrack(index) {
-            if (index < 0 || index >= playlist.length) return;
-            
-            // Stop current audio
-            if (isPlaying && playlist[currentTrackIndex].type === 'audio') {
-                currentAudio.pause();
-            }
-            
-            // Update current track index
-            currentTrackIndex = index;
-            const track = playlist[currentTrackIndex];
-            
-            // Update UI
-            updateNowPlaying();
-            updateActiveTrack();
-            updateNavDots();
-            
-            // Scroll to track
-            const trackElements = document.querySelectorAll('.music-track');
-            if (trackElements[index]) {
-                trackElements[index].scrollIntoView({ behavior: 'smooth' });
-            }
-            
-            // Hide/show player types
-            document.querySelectorAll('.music-track').forEach(t => {
-                const nativePlayer = t.querySelector('.native-player');
-                const embedPlayer = t.querySelector('.embed-player');
-                
-                if (nativePlayer) nativePlayer.style.display = 'none';
-                if (embedPlayer) embedPlayer.style.display = 'none';
-            });
-            
-            // Show appropriate player for current track
-            const currentTrackElement = trackElements[currentTrackIndex];
-            if (track.type === 'audio') {
-                // Play audio track
-                await playAudioTrack(track);
-                const nativePlayer = currentTrackElement.querySelector('.native-player');
-                if (nativePlayer) nativePlayer.style.display = 'block';
-            } else if (track.type === 'embed') {
-                // Show embed player
-                const embedPlayer = currentTrackElement.querySelector('.embed-player');
-                if (embedPlayer) embedPlayer.style.display = 'block';
-                
-                // Auto-play embed if it's SoundCloud
-                if (track.platform === 'soundcloud') {
-                    setTimeout(() => {
-                        const iframe = currentTrackElement.querySelector('iframe');
-                        if (iframe && iframe.contentWindow) {
-                            iframe.contentWindow.postMessage(JSON.stringify({
-                                method: 'play'
-                            }), 'https://w.soundcloud.com');
-                        }
-                    }, 1000);
-                }
-            }
-        }
-        
-        // Play audio track
-        async function playAudioTrack(track) {
-            try {
-                // Set audio source
-                currentAudio.src = track.audioUrl;
-                
-                // Load and play
-                await currentAudio.load();
-                await currentAudio.play();
-                
-                // Update play button
-                const playBtn = document.getElementById('playBtn');
-                if (playBtn) {
-                    playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                }
-                
-                isPlaying = true;
-                
-                console.log(`🎵 Tocando: ${track.title} - ${track.artist}`);
-                
-            } catch (error) {
-                console.error('Erro ao tocar áudio:', error);
-                handleAudioError();
-            }
-        }
-        
-        // Toggle embed play
-        function toggleEmbedPlay(trackId) {
-            const track = playlist.find(t => t.id === trackId);
-            if (!track || track.type !== 'embed') return;
-            
-            const trackElement = document.querySelector(`[data-id="${trackId}"]`);
-            const iframe = trackElement.querySelector('iframe');
-            
-            if (iframe && iframe.contentWindow) {
-                iframe.contentWindow.postMessage(JSON.stringify({
-                    method: 'toggle'
-                }), '*');
-            }
-        }
-        
-        // Toggle play/pause for audio
-        function togglePlayPause() {
-            if (!playlist.length || playlist[currentTrackIndex].type !== 'audio') return;
-            
-            if (isPlaying) {
-                currentAudio.pause();
-                const playBtn = document.getElementById('playBtn');
-                if (playBtn) {
-                    playBtn.innerHTML = '<i class="fas fa-play"></i>';
-                }
-            } else {
-                if (currentAudio.src) {
-                    currentAudio.play();
-                    const playBtn = document.getElementById('playBtn');
-                    if (playBtn) {
-                        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                    }
-                } else {
-                    playTrack(currentTrackIndex);
-                }
-            }
-            
-            isPlaying = !isPlaying;
-        }
-        
-        // Play next track
-        function playNext() {
-            if (playlist.length === 0) return;
-            const nextIndex = (currentTrackIndex + 1) % playlist.length;
-            playTrack(nextIndex);
-        }
-        
-        // Play previous track
-        function playPrev() {
-            if (playlist.length === 0) return;
-            const prevIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
-            playTrack(prevIndex);
-        }
-        
-        // Update progress bar
-        function updateProgress() {
-            const track = playlist[currentTrackIndex];
-            if (!track || track.type !== 'audio') return;
-            
-            const currentTime = currentAudio.currentTime;
-            const duration = currentAudio.duration || 180;
-            const progress = (currentTime / duration) * 100;
-            
-            // Update progress bar
-            const progressBar = document.getElementById(`progress-${track.id}`);
-            if (progressBar) {
-                progressBar.style.width = `${progress}%`;
-            }
-            
-            // Update time display
-            const currentTimeDisplay = document.getElementById('currentTime');
-            if (currentTimeDisplay) {
-                const minutes = Math.floor(currentTime / 60);
-                const seconds = Math.floor(currentTime % 60);
-                currentTimeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }
-        
-        // Update duration display
-        function updateDurationDisplay() {
-            const track = playlist[currentTrackIndex];
-            if (!track || track.type !== 'audio') return;
-            
-            const duration = currentAudio.duration;
-            const durationDisplay = document.getElementById('duration');
-            
-            if (durationDisplay && !isNaN(duration)) {
-                const minutes = Math.floor(duration / 60);
-                const seconds = Math.floor(duration % 60);
-                durationDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-            }
-        }
-        
-        // Seek in track
-        function seekTrack(event) {
-            const track = playlist[currentTrackIndex];
-            if (!track || track.type !== 'audio' || !currentAudio.duration) return;
-            
-            const progressContainer = event.currentTarget;
-            const rect = progressContainer.getBoundingClientRect();
-            const clickPosition = event.clientX - rect.left;
-            const percentage = clickPosition / rect.width;
-            
-            // Seek audio
-            currentAudio.currentTime = percentage * currentAudio.duration;
-        }
-        
-        // Handle audio errors
-        function handleAudioError() {
-            console.error('Erro no áudio');
-            const playBtn = document.getElementById('playBtn');
-            if (playBtn) {
-                playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            }
-            isPlaying = false;
-        }
-        
-        // Update active track in playlist
-        function updateActiveTrack() {
-            document.querySelectorAll('.playlist-track').forEach((el, index) => {
-                el.classList.toggle('active', index === currentTrackIndex);
-            });
-        }
-        
-        // Update navigation dots
-        function updateNavDots() {
-            document.querySelectorAll('.nav-dot').forEach((el, index) => {
-                el.classList.toggle('active', index === currentTrackIndex);
-            });
-        }
-        
-        // Update now playing text
-        function updateNowPlaying() {
-            const track = playlist[currentTrackIndex];
-            if (track) {
-                nowPlayingText.textContent = `${track.artist} - ${track.title}`;
-            }
-        }
-        
-        // Add track from input
-        function addTrack() {
-            let trackData = {};
-            let platform = 'custom';
-            let url = '';
-            
-            if (currentTrackType === 'url') {
-                url = trackUrlInput.value.trim();
-                
-                if (!url) {
-                    alert('Por favor, cole uma URL de música!');
-                    return;
-                }
-                
-                // Detect platform from URL
-                if (url.includes('soundcloud.com')) {
-                    platform = 'soundcloud';
-                    trackData = {
-                        type: 'embed',
-                        embedCode: createSoundCloudEmbed(url)
-                    };
-                } else if (url.includes('spotify.com')) {
-                    platform = 'spotify';
-                    trackData = {
-                        type: 'embed',
-                        embedCode: createSpotifyEmbed(url)
-                    };
-                } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
-                    if (url.includes('music.youtube.com')) {
-                        platform = 'youtube-music';
-                    } else {
-                        platform = 'youtube';
-                    }
-                    trackData = {
-                        type: 'embed',
-                        embedCode: createYouTubeEmbed(url)
-                    };
-                } else if (url.includes('drive.google.com')) {
-                    platform = 'google-drive';
-                    trackData = {
-                        type: 'audio',
-                        audioUrl: convertGoogleDriveUrl(url)
-                    };
-                } else {
-                    platform = 'native';
-                    trackData = {
-                        type: 'audio',
-                        audioUrl: url
-                    };
-                }
-                
-            } else if (currentTrackType === 'embed') {
-                const embedCode = trackEmbedInput.value.trim();
-                
-                if (!embedCode) {
-                    alert('Por favor, cole um código embed!');
-                    return;
-                }
-                
-                // Detect platform from embed code
-                if (embedCode.includes('soundcloud.com')) {
-                    platform = 'soundcloud';
-                } else if (embedCode.includes('spotify.com')) {
-                    platform = 'spotify';
-                } else if (embedCode.includes('youtube.com') || embedCode.includes('youtu.be')) {
-                    platform = 'youtube';
-                } else if (embedCode.includes('drive.google.com')) {
-                    platform = 'google-drive';
-                }
-                
-                trackData = {
-                    type: 'embed',
-                    embedCode: embedCode
-                };
-            }
-            
-            // Get track info from user
-            const title = prompt('Título da música:', 'Nova Música') || 'Nova Música';
-            const artist = prompt('Nome do artista:', 'Artista Desconhecido') || 'Artista Desconhecido';
-            const album = prompt('Álbum (opcional):', 'Single') || 'Single';
-            const duration = prompt('Duração (ex: 3:45):', '3:45') || '3:45';
-            const artwork = prompt('URL da capa (opcional):', 
-                'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop') || 
-                'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop';
-            
-            // Create new track
-            const newTrack = {
-                id: Date.now(),
-                ...trackData,
-                title: title,
-                artist: artist,
-                album: album,
-                artwork: artwork,
-                duration: duration,
-                platform: platform
-            };
-            
-            // Add to playlist
-            playlist.push(newTrack);
-            
-            // Update UI
-            renderPlaylist();
-            
-            // Add to main container
-            const trackElement = createTrackElement(newTrack, playlist.length - 1);
-            musicContainer.appendChild(trackElement);
-            
-            // Update navigation dots
-            createNavDots();
-            
-            // Clear inputs
-            trackUrlInput.value = '';
-            trackEmbedInput.value = '';
-            
-            // Hide sidebar
-            togglePlaylist();
-            
-            // If this is the first track, play it
-            if (playlist.length === 1) {
-                playTrack(0);
-            }
-            
-            // Show success notification
-            showNotification('Música adicionada à playlist!');
-        }
-        
-        // Convert Google Drive URL to direct download
-        function convertGoogleDriveUrl(url) {
-            // Extract file ID from URL
-            const fileIdMatch = url.match(/\/d\/([^\/]+)/) || url.match(/id=([^&]+)/);
-            if (fileIdMatch) {
-                const fileId = fileIdMatch[1];
-                return `https://drive.google.com/uc?export=download&id=${fileId}`;
-            }
-            return url;
-        }
-        
-        // Create SoundCloud embed from URL
-        function createSoundCloudEmbed(url) {
-            // Extract track ID from URL
-            const trackId = url.split('/').pop();
-            return `<iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/${trackId}&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>`;
-        }
-        
-        // Create Spotify embed from URL
-        function createSpotifyEmbed(url) {
-            // Extract track ID from URL
-            const trackId = url.split('/').pop();
-            return `<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/${trackId}?utm_source=generator&theme=0" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
-        }
-        
-        // Create YouTube embed from URL
-        function createYouTubeEmbed(url) {
-            // Extract video ID from URL
-            let videoId = '';
-            if (url.includes('youtube.com/watch?v=')) {
-                videoId = url.split('v=')[1].split('&')[0];
-            } else if (url.includes('youtu.be/')) {
-                videoId = url.split('youtu.be/')[1].split('?')[0];
-            } else if (url.includes('music.youtube.com')) {
-                videoId = url.split('v=')[1]?.split('&')[0];
-            }
-            
-            if (videoId) {
-                return `<iframe width="100%" height="166" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            }
-            
-            return `<iframe width="100%" height="166" src="${url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-        }
-        
-        // Handle audio file upload
-        function handleAudioUpload(event) {
-            const files = event.target.files;
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                
-                if (!file.type.startsWith('audio/')) {
-                    alert(`${file.name} não é um arquivo de áudio válido!`);
-                    continue;
-                }
-                
-                // Create object URL for the file
-                const audioUrl = URL.createObjectURL(file);
-                
-                // Extract metadata from filename
-                const fileName = file.name.replace(/\.[^/.]+$/, "");
-                const [artist, title] = fileName.split(' - ').length >= 2 ? 
-                    [fileName.split(' - ')[0], fileName.split(' - ')[1]] : 
-                    ['Artista Desconhecido', fileName];
-                
-                // Create new track
-                const newTrack = {
-                    id: Date.now() + i,
-                    type: 'audio',
-                    title: title,
-                    artist: artist,
-                    album: 'Upload',
-                    artwork: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&h=400&fit=crop',
-                    duration: '?:??',
-                    audioUrl: audioUrl,
-                    platform: 'native'
-                };
-                
-                // Add to playlist
-                playlist.push(newTrack);
-            }
-            
-            // Update UI
-            renderPlaylist();
-            renderTracks();
-            createNavDots();
-            
-            // Reset file input
-            event.target.value = '';
-            
-            // Show success notification
-            showNotification(`${files.length} música(s) adicionada(s) à playlist!`);
-            
-            // If this is the first track, play it
-            if (playlist.length === files.length) {
-                playTrack(0);
-            }
-        }
-        
-        // Remove track from playlist
-        function removeTrack(trackId, event) {
-            event.stopPropagation();
-            
-            const trackIndex = playlist.findIndex(t => t.id === trackId);
-            if (trackIndex === -1) return;
-            
-            // If removing currently playing track
-            if (trackIndex === currentTrackIndex) {
-                if (playlist[trackIndex].type === 'audio' && isPlaying) {
-                    currentAudio.pause();
-                    isPlaying = false;
-                }
-            }
-            
-            // Revoke object URL if it's an uploaded file
-            const track = playlist[trackIndex];
-            if (track.type === 'audio' && track.audioUrl.startsWith('blob:')) {
-                URL.revokeObjectURL(track.audioUrl);
-            }
-            
-            // Remove from playlist
-            playlist.splice(trackIndex, 1);
-            
-            // Adjust current track index
-            if (trackIndex === currentTrackIndex) {
-                if (playlist.length > 0) {
-                    playTrack(Math.min(trackIndex, playlist.length - 1));
-                } else {
-                    currentTrackIndex = 0;
-                    updateNowPlaying();
-                }
-            } else if (trackIndex < currentTrackIndex) {
-                currentTrackIndex--;
-            }
-            
-            // Re-render everything
-            renderPlaylist();
-            renderTracks();
-            createNavDots();
-            updateActiveTrack();
-            updateNowPlaying();
-            updateUIState();
-            
-            // Show notification
-            showNotification('Música removida da playlist');
-        }
-        
-        // Toggle playlist sidebar
-        function togglePlaylist() {
-            playlistSidebar.classList.toggle('open');
-        }
-        
-        // Handle scroll to detect current track
-        function handleScroll() {
-            if (playlist.length === 0) return;
-            
-            const trackElements = document.querySelectorAll('.music-track');
-            const containerRect = musicContainer.getBoundingClientRect();
-            
-            trackElements.forEach((track, index) => {
-                const rect = track.getBoundingClientRect();
-                
-                if (rect.top >= containerRect.top && rect.bottom <= containerRect.bottom) {
-                    if (currentTrackIndex !== index) {
-                        playTrack(index);
-                    }
-                }
-            });
-        }
-        
-        // Initialize the player
-        initPlayer();
-        
-        // Add scroll listener
-        musicContainer.addEventListener('scroll', handleScroll);
+        // Initialize on load
+        window.onload = function() {
+            init();
+            loadSharedPlaylist();
+        };
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
@@ -1825,40 +1153,24 @@ placeholder="<iframe src='...'></iframe>"></textarea>
             switch(e.key) {
                 case ' ':
                     e.preventDefault();
-                    if (playlist[currentTrackIndex]?.type === 'audio') {
-                        togglePlayPause();
-                    }
+                    togglePlayPause();
                     break;
-                case 'ArrowUp':
-                    e.preventDefault();
-                    playPrev();
+                case 'ArrowLeft':
+                    playPrevious();
                     break;
-                case 'ArrowDown':
-                    e.preventDefault();
+                case 'ArrowRight':
                     playNext();
                     break;
-                case 'p':
-                case 'P':
-                    togglePlaylist();
-                    break;
-                case 'a':
-                case 'A':
-                    toggleAutoAdvance();
-                    break;
                 case 'Escape':
-                    playlistSidebar.classList.remove('open');
+                    closeShareModal();
                     break;
             }
         });
         
-        console.log('🎵 SoundScroll Player iniciado - Página limpa!');
-        console.log('📋 Adicione suas músicas usando a playlist (botão no canto superior direito)');
-        console.log('🎹 Atalhos (quando houver músicas):');
-        console.log('- A: Ativar/desativar auto-advance');
-        console.log('- Espaço: Play/Pause (áudio)');
-        console.log('- Setas ↑↓: Navegar entre músicas');
-        console.log('- P: Abrir/fechar playlist');
-        console.log('- Esc: Fechar playlist');
+        console.log('🎬 VideoFlow Player carregado com sucesso!');
+        console.log('📋 Plataformas suportadas: YouTube, Vimeo, Dailymotion, Twitch, Embeds personalizados');
+        console.log('🛡️ AdBlock integrado para remover anúncios de embeds');
+        console.log('🔗 Sistema de compartilhamento de playlists');
     </script>
 </body>
 </html>
