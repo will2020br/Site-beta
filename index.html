@@ -121,15 +121,22 @@
             justify-content: center;
         }
         
-        .video-embed {
+        .video-embed, .video-player {
             max-width: 100%;
             max-height: 100%;
             border: none;
         }
         
+        .video-player {
+            width: 100%;
+            height: 100%;
+            outline: none;
+        }
+        
         .empty-video {
             text-align: center;
             color: #666;
+            padding: 40px;
         }
         
         .empty-video i {
@@ -207,11 +214,94 @@
             background: linear-gradient(45deg, #007bff, #0056b3);
         }
         
+        /* Tab system */
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 15px;
+            background: #1a1a1a;
+            padding: 5px;
+            border-radius: 10px;
+        }
+        
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            background: #333;
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 10px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .upload-area:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+        }
+        
+        .upload-icon {
+            font-size: 40px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            margin-bottom: 10px;
+        }
+        
+        .upload-subtext {
+            font-size: 12px;
+            color: #666;
+        }
+        
+        /* Google Drive specific */
+        .drive-note {
+            background: rgba(66, 133, 244, 0.1);
+            border: 1px solid rgba(66, 133, 244, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        
+        .drive-note i {
+            color: #4285f4;
+            margin-right: 8px;
+        }
+        
         .add-video-form {
             background: #1a1a1a;
             padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
         }
         
         .input-group {
@@ -225,7 +315,7 @@
             font-size: 14px;
         }
         
-        .url-input {
+        .url-input, .embed-input {
             width: 100%;
             padding: 12px;
             background: #222;
@@ -453,6 +543,24 @@
             transform: scale(1.1);
         }
         
+        /* Progress bar for local videos */
+        .video-progress {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            margin-top: 10px;
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: #ff0000;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
         /* AdBlock status */
         .adblock-status {
             position: absolute;
@@ -468,6 +576,24 @@
         .adblock-status.active {
             background: rgba(0, 255, 0, 0.2);
             color: #00ff00;
+        }
+        
+        /* Upload progress */
+        .upload-progress {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .upload-progress-bar {
+            height: 100%;
+            background: #4285f4;
+            width: 0%;
+            transition: width 0.3s;
         }
         
         /* Responsive */
@@ -514,6 +640,29 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+        
+        /* File upload input */
+        .file-input {
+            display: none;
+        }
+        
+        /* Platform badges */
+        .platform-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+        
+        .platform-youtube { background: #ff0000; }
+        .platform-vimeo { background: #1ab7ea; }
+        .platform-dailymotion { background: #0066dc; }
+        .platform-twitch { background: #9146ff; }
+        .platform-google-drive { background: #34a853; }
+        .platform-local { background: #9c27b0; }
+        .platform-custom { background: #ff9800; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -548,11 +697,16 @@
                     </div>
                 </div>
                 
+                <div class="video-progress" id="videoProgress">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                
                 <div class="video-info" id="videoInfo" style="display: none;">
                     <h2 class="video-title" id="currentVideoTitle">Título do Vídeo</h2>
                     <div class="video-meta">
                         <span id="currentVideoPlatform">YouTube</span>
                         <span id="currentVideoDuration">0:00</span>
+                        <span id="currentVideoSize"></span>
                     </div>
                 </div>
                 
@@ -565,6 +719,9 @@
                     </button>
                     <button class="control-btn" onclick="playNext()">
                         <i class="fas fa-step-forward"></i>
+                    </button>
+                    <button class="control-btn" onclick="toggleMute()" id="muteBtn">
+                        <i class="fas fa-volume-up"></i>
                     </button>
                 </div>
             </section>
@@ -585,15 +742,62 @@
                     </div>
                 </div>
                 
-                <div class="add-video-form">
-                    <div class="input-group">
-                        <label class="input-label">Cole o link do vídeo:</label>
-                        <input type="text" class="url-input" id="videoUrl" 
-                               placeholder="https://youtube.com/watch?v=... ou https://vimeo.com/...">
+                <!-- Tab System -->
+                <div class="tab-container">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" onclick="switchTab('link')">
+                            <i class="fas fa-link"></i> Link
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('upload')">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
                     </div>
-                    <button class="add-btn" onclick="addVideo()">
-                        <i class="fas fa-plus"></i> Adicionar Vídeo
-                    </button>
+                    
+                    <!-- Link Tab -->
+                    <div class="tab-content active" id="tabLink">
+                        <div class="add-video-form">
+                            <div class="input-group">
+                                <label class="input-label">Cole o link do vídeo:</label>
+                                <input type="text" class="url-input" id="videoUrl" 
+                                       placeholder="https://youtube.com/watch?v=... ou https://drive.google.com/file/d/...">
+                            </div>
+                            <div class="drive-note">
+                                <i class="fab fa-google-drive"></i>
+                                <strong>Google Drive:</strong> Use links compartilháveis. Certifique-se de que o arquivo está configurado como "Qualquer pessoa com o link pode ver".
+                            </div>
+                            <button class="add-btn" onclick="addVideoFromLink()">
+                                <i class="fas fa-plus"></i> Adicionar Vídeo
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Upload Tab -->
+                    <div class="tab-content" id="tabUpload">
+                        <div class="add-video-form">
+                            <input type="file" class="file-input" id="videoUpload" accept="video/*" multiple>
+                            <div class="upload-area" onclick="document.getElementById('videoUpload').click()">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="upload-text">
+                                    <strong>Clique para selecionar vídeos</strong>
+                                </div>
+                                <div class="upload-subtext">
+                                    Arraste e solte ou clique para fazer upload
+                                </div>
+                                <div class="upload-subtext">
+                                    Suporta: MP4, WebM, OGG, MOV, AVI
+                                </div>
+                            </div>
+                            <div class="upload-progress" id="uploadProgress">
+                                <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                            </div>
+                            <div class="drive-note">
+                                <i class="fas fa-info-circle"></i>
+                                Os vídeos são armazenados localmente no seu navegador.
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="playlist-items" id="playlistItems">
@@ -634,19 +838,27 @@
         let isAdBlockEnabled = true;
         let isPlaying = false;
         let shareableLink = '';
+        let currentVideoPlayer = null;
+        let currentTab = 'link';
         
         // DOM Elements
         const videoContainer = document.getElementById('videoContainer');
         const playlistItems = document.getElementById('playlistItems');
         const videoUrlInput = document.getElementById('videoUrl');
+        const videoUploadInput = document.getElementById('videoUpload');
         const adblockToggle = document.getElementById('adblockToggle');
         const adblockStatus = document.getElementById('adblockStatus');
         const videoInfo = document.getElementById('videoInfo');
         const playerControls = document.getElementById('playerControls');
         const playPauseBtn = document.getElementById('playPauseBtn');
+        const muteBtn = document.getElementById('muteBtn');
         const shareModal = document.getElementById('shareModal');
         const shareLink = document.getElementById('shareLink');
         const notification = document.getElementById('notification');
+        const videoProgress = document.getElementById('videoProgress');
+        const progressBar = document.getElementById('progressBar');
+        const uploadProgress = document.getElementById('uploadProgress');
+        const uploadProgressBar = document.getElementById('uploadProgressBar');
         
         // Platform detection and embed generation
         const platformConfigs = {
@@ -672,7 +884,7 @@
                 `
             },
             'vimeo': {
-                regex: /vimeo\.com\/([0-9]+)/,
+                regex: /vimeo\.com\/(?:video\/)?([0-9]+)/,
                 embed: (id) => `
                     <iframe 
                         class="video-embed"
@@ -684,7 +896,7 @@
                 `
             },
             'dailymotion': {
-                regex: /dailymotion\.com\/video\/([a-zA-Z0-9]+)/,
+                regex: /dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/,
                 embed: (id) => `
                     <iframe 
                         class="video-embed"
@@ -704,6 +916,18 @@
                         allowfullscreen>
                     </iframe>
                 `
+            },
+            'google-drive': {
+                regex: /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+                embed: (id) => `
+                    <iframe 
+                        class="video-embed"
+                        src="https://drive.google.com/file/d/${id}/preview"
+                        frameborder="0"
+                        allow="autoplay"
+                        allowfullscreen>
+                    </iframe>
+                `
             }
         };
         
@@ -719,11 +943,144 @@
                 }
             }
             
+            // Setup file upload listener
+            videoUploadInput.addEventListener('change', handleFileUpload);
+            
+            // Setup drag and drop
+            setupDragAndDrop();
+            
             console.log('🎬 VideoFlow Player inicializado');
         }
         
-        // Add video to playlist
-        function addVideo() {
+        // Switch between tabs
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`).classList.add('active');
+        }
+        
+        // Setup drag and drop
+        function setupDragAndDrop() {
+            const uploadArea = document.querySelector('.upload-area');
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#ff6b6b';
+                uploadArea.style.background = 'rgba(255, 107, 107, 0.1)';
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.style.borderColor = '#444';
+                uploadArea.style.background = 'transparent';
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#444';
+                uploadArea.style.background = 'transparent';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    handleFiles(e.dataTransfer.files);
+                }
+            });
+        }
+        
+        // Handle file upload
+        function handleFileUpload(event) {
+            handleFiles(event.target.files);
+        }
+        
+        // Handle files (upload or drag & drop)
+        function handleFiles(files) {
+            uploadProgress.style.display = 'block';
+            uploadProgressBar.style.width = '0%';
+            
+            let processed = 0;
+            const total = files.length;
+            
+            Array.from(files).forEach((file, index) => {
+                if (!file.type.startsWith('video/')) {
+                    showNotification(`Arquivo ${file.name} não é um vídeo!`, 'error');
+                    processed++;
+                    updateUploadProgress(processed, total);
+                    return;
+                }
+                
+                // Read file as data URL
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const videoData = {
+                        id: Date.now() + index,
+                        type: 'local',
+                        platform: 'local',
+                        title: file.name.replace(/\.[^/.]+$/, ""),
+                        duration: '?',
+                        size: formatFileSize(file.size),
+                        mimeType: file.type,
+                        dataUrl: e.target.result,
+                        thumbnail: null // Can generate thumbnail later
+                    };
+                    
+                    playlist.push(videoData);
+                    processed++;
+                    updateUploadProgress(processed, total);
+                    
+                    if (processed === total) {
+                        savePlaylist();
+                        renderPlaylist();
+                        
+                        if (playlist.length === files.length) {
+                            playVideo(0);
+                        }
+                        
+                        setTimeout(() => {
+                            uploadProgress.style.display = 'none';
+                            showNotification(`${files.length} vídeo(s) adicionado(s)!`);
+                        }, 500);
+                    }
+                };
+                
+                reader.onerror = function() {
+                    processed++;
+                    updateUploadProgress(processed, total);
+                    showNotification(`Erro ao ler arquivo ${file.name}`, 'error');
+                };
+                
+                reader.readAsDataURL(file);
+            });
+            
+            // Reset file input
+            videoUploadInput.value = '';
+        }
+        
+        // Update upload progress
+        function updateUploadProgress(processed, total) {
+            const progress = (processed / total) * 100;
+            uploadProgressBar.style.width = `${progress}%`;
+        }
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Add video from link
+        function addVideoFromLink() {
             const url = videoUrlInput.value.trim();
             
             if (!url) {
@@ -744,6 +1101,7 @@
                     
                     videoData = {
                         id: Date.now(),
+                        type: 'embed',
                         url: url,
                         videoId: videoId,
                         platform: platform,
@@ -763,6 +1121,7 @@
                     
                     videoData = {
                         id: Date.now(),
+                        type: 'embed',
                         url: url,
                         platform: 'custom',
                         title: title,
@@ -797,6 +1156,8 @@
                     return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
                 case 'vimeo':
                     return `https://vumbnail.com/${videoId}.jpg`;
+                case 'dailymotion':
+                    return `https://www.dailymotion.com/thumbnail/video/${videoId}`;
                 default:
                     return '';
             }
@@ -823,11 +1184,17 @@
                 item.dataset.index = index;
                 item.onclick = () => playVideo(index);
                 
+                // Platform badge color
+                const platformClass = `platform-${video.platform.replace('-', '')}`;
+                
                 item.innerHTML = `
                     <div class="item-number">${index + 1}</div>
                     <div class="item-info">
                         <div class="item-title">${video.title}</div>
-                        <div class="item-platform">${video.platform.charAt(0).toUpperCase() + video.platform.slice(1)}</div>
+                        <div class="item-platform">
+                            ${video.platform.charAt(0).toUpperCase() + video.platform.slice(1)}
+                            ${video.size ? ` • ${video.size}` : ''}
+                        </div>
                     </div>
                     <div class="item-duration">${video.duration || '?'}</div>
                     <button class="remove-btn" onclick="removeVideo(${video.id}, event)">
@@ -846,48 +1213,110 @@
             currentVideoIndex = index;
             const video = playlist[index];
             
+            // Clean up previous player
+            if (currentVideoPlayer) {
+                currentVideoPlayer.pause();
+                currentVideoPlayer = null;
+            }
+            
             // Update UI
             renderPlaylist();
             updateVideoInfo(video);
             
-            // Generate embed with AdBlock
-            let embedHtml = '';
+            // Generate player based on video type
+            let playerHtml = '';
             
-            if (video.platform === 'custom') {
-                embedHtml = applyAdBlockFilters(video.embedCode);
-            } else {
-                const config = platformConfigs[video.platform];
-                if (config) {
-                    if (isAdBlockEnabled && video.platform === 'youtube' && config.cleanEmbed) {
-                        embedHtml = config.cleanEmbed(video.videoId);
-                    } else {
-                        embedHtml = config.embed(video.videoId);
+            if (video.type === 'local') {
+                // Local video player
+                playerHtml = `
+                    <video class="video-player" id="localVideoPlayer" controls autoplay>
+                        <source src="${video.dataUrl}" type="${video.mimeType}">
+                        Seu navegador não suporta a tag de vídeo.
+                    </video>
+                `;
+                videoProgress.style.display = 'block';
+                playerControls.style.display = 'flex';
+            } else if (video.type === 'embed') {
+                // Embed player
+                if (video.platform === 'custom') {
+                    playerHtml = applyAdBlockFilters(video.embedCode);
+                } else {
+                    const config = platformConfigs[video.platform];
+                    if (config) {
+                        if (isAdBlockEnabled && video.platform === 'youtube' && config.cleanEmbed) {
+                            playerHtml = config.cleanEmbed(video.videoId);
+                        } else {
+                            playerHtml = config.embed(video.videoId);
+                        }
                     }
                 }
+                
+                // Apply additional AdBlock filters
+                playerHtml = applyAdBlockFilters(playerHtml);
+                videoProgress.style.display = 'none';
+                playerControls.style.display = 'flex';
             }
             
-            // Apply additional AdBlock filters
-            embedHtml = applyAdBlockFilters(embedHtml);
-            
             // Display video
-            videoContainer.innerHTML = embedHtml;
+            videoContainer.innerHTML = playerHtml;
             videoInfo.style.display = 'block';
-            playerControls.style.display = 'flex';
             
-            // Auto-play
-            setTimeout(() => {
-                try {
-                    const iframe = videoContainer.querySelector('iframe');
-                    if (iframe && iframe.contentWindow) {
-                        iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            // Setup local video player events
+            if (video.type === 'local') {
+                setTimeout(() => {
+                    const videoPlayer = document.getElementById('localVideoPlayer');
+                    if (videoPlayer) {
+                        currentVideoPlayer = videoPlayer;
+                        
+                        videoPlayer.addEventListener('timeupdate', updateLocalProgress);
+                        videoPlayer.addEventListener('play', () => {
+                            isPlaying = true;
+                            playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                        });
+                        videoPlayer.addEventListener('pause', () => {
+                            isPlaying = false;
+                            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                        });
+                        videoPlayer.addEventListener('ended', playNext);
+                        
+                        // Try to get duration
+                        videoPlayer.addEventListener('loadedmetadata', () => {
+                            if (video.duration === '?' && !isNaN(videoPlayer.duration)) {
+                                video.duration = formatDuration(videoPlayer.duration);
+                                updateVideoInfo(video);
+                                savePlaylist();
+                                renderPlaylist();
+                            }
+                        });
                     }
-                } catch (e) {
-                    console.log('Auto-play não suportado');
-                }
-            }, 1000);
+                }, 100);
+            }
             
             // Save last played
             localStorage.setItem('videoflow_last_played', index);
+        }
+        
+        // Update local video progress
+        function updateLocalProgress() {
+            if (!currentVideoPlayer) return;
+            
+            const progress = (currentVideoPlayer.currentTime / currentVideoPlayer.duration) * 100;
+            progressBar.style.width = `${progress}%`;
+            
+            // Update duration display
+            const durationElement = document.getElementById('currentVideoDuration');
+            if (durationElement && !isNaN(currentVideoPlayer.duration)) {
+                durationElement.textContent = formatDuration(currentVideoPlayer.currentTime) + 
+                                            ' / ' + 
+                                            formatDuration(currentVideoPlayer.duration);
+            }
+        }
+        
+        // Format duration
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
         
         // Apply AdBlock filters
@@ -917,7 +1346,23 @@
             document.getElementById('currentVideoTitle').textContent = video.title;
             document.getElementById('currentVideoPlatform').textContent = 
                 video.platform.charAt(0).toUpperCase() + video.platform.slice(1);
-            document.getElementById('currentVideoDuration').textContent = video.duration || '?';
+            
+            const durationElement = document.getElementById('currentVideoDuration');
+            const sizeElement = document.getElementById('currentVideoSize');
+            
+            if (video.duration && video.duration !== '?') {
+                durationElement.textContent = video.duration;
+                durationElement.style.display = 'inline';
+            } else {
+                durationElement.style.display = 'none';
+            }
+            
+            if (video.size) {
+                sizeElement.textContent = ` • ${video.size}`;
+                sizeElement.style.display = 'inline';
+            } else {
+                sizeElement.style.display = 'none';
+            }
         }
         
         // Toggle AdBlock
@@ -932,7 +1377,7 @@
             showNotification(isAdBlockEnabled ? 'AdBlock ativado!' : 'AdBlock desativado');
             
             // Re-render current video with new AdBlock setting
-            if (playlist.length > 0) {
+            if (playlist.length > 0 && playlist[currentVideoIndex].type === 'embed') {
                 playVideo(currentVideoIndex);
             }
         }
@@ -961,6 +1406,7 @@
                     `;
                     videoInfo.style.display = 'none';
                     playerControls.style.display = 'none';
+                    videoProgress.style.display = 'none';
                     currentVideoIndex = 0;
                 }
             } else if (index < currentVideoIndex) {
@@ -991,6 +1437,7 @@
                 `;
                 videoInfo.style.display = 'none';
                 playerControls.style.display = 'none';
+                videoProgress.style.display = 'none';
                 
                 showNotification('Playlist limpa');
             }
@@ -1012,15 +1459,41 @@
         function togglePlayPause() {
             if (playlist.length === 0) return;
             
-            const iframe = videoContainer.querySelector('iframe');
-            if (!iframe) return;
+            const video = playlist[currentVideoIndex];
             
-            try {
-                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
-                isPlaying = !isPlaying;
-            } catch (e) {
-                console.log('Play/Pause não suportado');
+            if (video.type === 'local' && currentVideoPlayer) {
+                if (currentVideoPlayer.paused) {
+                    currentVideoPlayer.play();
+                    playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                } else {
+                    currentVideoPlayer.pause();
+                    playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+                }
+            } else if (video.type === 'embed') {
+                const iframe = videoContainer.querySelector('iframe');
+                if (!iframe) return;
+                
+                try {
+                    // Toggle play/pause for embeds (YouTube API)
+                    iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                    playPauseBtn.innerHTML = isPlaying ? '<i class="fas fa-play"></i>' : '<i class="fas fa-pause"></i>';
+                    isPlaying = !isPlaying;
+                } catch (e) {
+                    console.log('Play/Pause não suportado para este embed');
+                }
+            }
+        }
+        
+        function toggleMute() {
+            if (playlist.length === 0) return;
+            
+            const video = playlist[currentVideoIndex];
+            
+            if (video.type === 'local' && currentVideoPlayer) {
+                currentVideoPlayer.muted = !currentVideoPlayer.muted;
+                muteBtn.innerHTML = currentVideoPlayer.muted ? 
+                    '<i class="fas fa-volume-mute"></i>' : 
+                    '<i class="fas fa-volume-up"></i>';
             }
         }
         
@@ -1031,14 +1504,32 @@
                 return;
             }
             
-            // Generate shareable data
+            // Prepare playlist data for sharing
             const playlistData = {
-                videos: playlist.map(v => ({
-                    url: v.url,
-                    title: v.title,
-                    platform: v.platform,
-                    duration: v.duration
-                })),
+                videos: playlist.map(v => {
+                    // For local videos, we can't share the data URL (too large)
+                    // Instead, we'll store metadata and skip the data
+                    if (v.type === 'local') {
+                        return {
+                            type: 'local',
+                            platform: v.platform,
+                            title: v.title,
+                            duration: v.duration,
+                            size: v.size,
+                            mimeType: v.mimeType
+                            // Note: dataUrl is omitted for size reasons
+                        };
+                    } else {
+                        return {
+                            type: v.type,
+                            url: v.url,
+                            platform: v.platform,
+                            title: v.title,
+                            duration: v.duration,
+                            videoId: v.videoId
+                        };
+                    }
+                }),
                 timestamp: Date.now(),
                 adBlockEnabled: isAdBlockEnabled
             };
@@ -1077,14 +1568,32 @@
             if (playlistParam) {
                 try {
                     const playlistData = JSON.parse(atob(playlistParam));
-                    playlist = playlistData.videos.map((v, i) => ({
-                        id: Date.now() + i,
-                        url: v.url,
-                        title: v.title,
-                        platform: v.platform,
-                        duration: v.duration,
-                        videoId: extractVideoId(v.url, v.platform)
-                    }));
+                    
+                    playlist = playlistData.videos.map((v, i) => {
+                        if (v.type === 'local') {
+                            return {
+                                id: Date.now() + i,
+                                type: 'local',
+                                platform: v.platform,
+                                title: v.title,
+                                duration: v.duration,
+                                size: v.size,
+                                mimeType: v.mimeType,
+                                dataUrl: null // Can't recover local files from shared link
+                            };
+                        } else {
+                            return {
+                                id: Date.now() + i,
+                                type: v.type,
+                                url: v.url,
+                                platform: v.platform,
+                                title: v.title,
+                                duration: v.duration,
+                                videoId: v.videoId,
+                                thumbnail: getThumbnailUrl(v.platform, v.videoId)
+                            };
+                        }
+                    });
                     
                     if (playlistData.adBlockEnabled !== undefined) {
                         isAdBlockEnabled = playlistData.adBlockEnabled;
@@ -1113,19 +1622,30 @@
             }
         }
         
-        // Extract video ID from URL
-        function extractVideoId(url, platform) {
-            const config = platformConfigs[platform];
-            if (config) {
-                const match = url.match(config.regex);
-                return match ? match[1] : null;
-            }
-            return null;
-        }
-        
         // Save playlist to localStorage
         function savePlaylist() {
-            localStorage.setItem('videoflow_playlist', JSON.stringify(playlist));
+            // For local videos, we need to handle large data URLs
+            const playlistToSave = playlist.map(v => {
+                if (v.type === 'local') {
+                    // Create a copy without the data URL to save space
+                    const { dataUrl, ...videoWithoutData } = v;
+                    return {
+                        ...videoWithoutData,
+                        hasLocalData: true
+                    };
+                }
+                return v;
+            });
+            
+            try {
+                localStorage.setItem('videoflow_playlist', JSON.stringify(playlistToSave));
+            } catch (e) {
+                console.warn('LocalStorage cheio, limpando vídeos locais...');
+                // Remove local videos if storage is full
+                playlist = playlist.filter(v => v.type !== 'local');
+                localStorage.setItem('videoflow_playlist', JSON.stringify(playlist));
+                showNotification('Armazenamento cheio, alguns vídeos foram removidos', 'error');
+            }
         }
         
         // Show notification
@@ -1164,13 +1684,18 @@
                 case 'Escape':
                     closeShareModal();
                     break;
+                case 'm':
+                case 'M':
+                    toggleMute();
+                    break;
             }
         });
         
         console.log('🎬 VideoFlow Player carregado com sucesso!');
-        console.log('📋 Plataformas suportadas: YouTube, Vimeo, Dailymotion, Twitch, Embeds personalizados');
+        console.log('📋 Plataformas suportadas: YouTube, Vimeo, Dailymotion, Twitch, Google Drive, Upload local');
         console.log('🛡️ AdBlock integrado para remover anúncios de embeds');
         console.log('🔗 Sistema de compartilhamento de playlists');
+        console.log('💾 Upload de vídeos locais suportado');
     </script>
 </body>
 </html>
