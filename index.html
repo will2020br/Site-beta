@@ -586,6 +586,30 @@
             display: none;
         }
         
+        /* Loading spinner */
+        .loading-spinner {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1002;
+            display: none;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top: 5px solid #ff0000;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         /* Responsive */
         @media (max-width: 1024px) {
             .main-content {
@@ -639,6 +663,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
+    <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+    </div>
+    
     <div class="container">
         <header>
             <div class="logo">
@@ -810,6 +838,7 @@
         const shareModal = document.getElementById('shareModal');
         const shareLink = document.getElementById('shareLink');
         const notification = document.getElementById('notification');
+        const loadingSpinner = document.getElementById('loadingSpinner');
         
         // Platform detection and embed generation
         const platformConfigs = {
@@ -888,13 +917,22 @@
         
         // Initialize
         function init() {
-            // Load playlist from localStorage if exists
-            const savedPlaylist = localStorage.getItem('mediaflow_playlist');
-            if (savedPlaylist) {
-                playlist = JSON.parse(savedPlaylist);
-                renderPlaylist();
-                if (playlist.length > 0) {
-                    playMedia(0);
+            // Check for shared playlist first
+            if (!loadSharedPlaylist()) {
+                // Load playlist from localStorage if exists
+                const savedPlaylist = localStorage.getItem('mediaflow_playlist');
+                if (savedPlaylist) {
+                    try {
+                        playlist = JSON.parse(savedPlaylist);
+                        renderPlaylist();
+                        if (playlist.length > 0) {
+                            playMedia(0);
+                        }
+                    } catch (e) {
+                        console.error('Erro ao carregar playlist do localStorage:', e);
+                        playlist = [];
+                        localStorage.removeItem('mediaflow_playlist');
+                    }
                 }
             }
             
@@ -1532,7 +1570,7 @@
             }
         }
         
-        // Share playlist
+        // Share playlist - CORRIGIDA
         function sharePlaylist() {
             if (playlist.length === 0) {
                 showNotification('Adicione mídias à playlist antes de compartilhar!', 'error');
@@ -1547,22 +1585,20 @@
                 return;
             }
             
-            // Generate shareable data
+            // Generate shareable data - usando uma estrutura mais simples e segura
             const playlistData = {
                 videos: shareablePlaylist.map(m => ({
                     url: m.url,
                     title: m.title,
                     type: m.type,
-                    platform: m.platform,
-                    duration: m.duration
+                    platform: m.platform || 'direct',
+                    duration: m.duration || ''
                 })),
-                timestamp: Date.now(),
-                adBlockEnabled: isAdBlockEnabled,
-                backgroundPlayEnabled: isBackgroundPlayEnabled
+                timestamp: Date.now()
             };
             
-            // Encode data to base64 for URL
-            const encodedData = btoa(JSON.stringify(playlistData));
+            // Usar encodeURIComponent para evitar problemas com caracteres especiais
+            const encodedData = btoa(encodeURIComponent(JSON.stringify(playlistData)));
             shareableLink = `${window.location.origin}${window.location.pathname}?playlist=${encodedData}`;
             
             // Update modal
@@ -1587,75 +1623,94 @@
                 });
         }
         
-        // Load shared playlist
+        // Load shared playlist - CORRIGIDA
         function loadSharedPlaylist() {
             const urlParams = new URLSearchParams(window.location.search);
             const playlistParam = urlParams.get('playlist');
             
-            if (playlistParam) {
-                try {
-                    const playlistData = JSON.parse(atob(playlistParam));
-                    
-                    playlist = playlistData.videos.map((m, i) => ({
+            if (!playlistParam) return false;
+            
+            try {
+                showLoading(true);
+                
+                // Decode usando decodeURIComponent
+                const decodedData = decodeURIComponent(atob(playlistParam));
+                const playlistData = JSON.parse(decodedData);
+                
+                if (!playlistData.videos || !Array.isArray(playlistData.videos)) {
+                    throw new Error('Formato de playlist inválido');
+                }
+                
+                // Processar os vídeos da playlist compartilhada
+                playlist = playlistData.videos.map((m, i) => {
+                    const mediaItem = {
                         id: Date.now() + i,
                         url: m.url,
-                        title: m.title,
-                        type: m.type,
-                        platform: m.platform,
-                        duration: m.duration,
-                        source: 'online',
-                        videoId: extractMediaId(m.url, m.platform)
-                    }));
+                        title: m.title || `Mídia ${i + 1}`,
+                        type: m.type || 'video',
+                        platform: m.platform || 'unknown',
+                        duration: m.duration || '',
+                        source: 'online'
+                    };
                     
-                    if (playlistData.adBlockEnabled !== undefined) {
-                        isAdBlockEnabled = playlistData.adBlockEnabled;
-                        adblockToggle.classList.toggle('active', isAdBlockEnabled);
-                        adblockStatus.classList.toggle('active', isAdBlockEnabled);
-                        adblockStatus.innerHTML = isAdBlockEnabled ? 
-                            '<i class="fas fa-shield-alt"></i> AdBlock Ativo' : 
-                            '<i class="fas fa-shield"></i> AdBlock Inativo';
+                    // Extrair videoId para plataformas conhecidas
+                    if (platformConfigs[m.platform] && m.url) {
+                        const match = m.url.match(platformConfigs[m.platform].regex);
+                        if (match) {
+                            mediaItem.videoId = match[2] || match[1];
+                        }
                     }
                     
-                    if (playlistData.backgroundPlayEnabled !== undefined) {
-                        isBackgroundPlayEnabled = playlistData.backgroundPlayEnabled;
-                        backgroundPlayToggle.classList.toggle('active', isBackgroundPlayEnabled);
-                        backgroundPlayIndicator.style.display = isBackgroundPlayEnabled ? 'flex' : 'none';
-                        backgroundPlayBtn.innerHTML = isBackgroundPlayEnabled ? 
-                            '<i class="fas fa-window-minimize"></i>' : 
-                            '<i class="fas fa-window-restore"></i>';
-                    }
-                    
-                    savePlaylist();
-                    renderPlaylist();
-                    
-                    if (playlist.length > 0) {
-                        playMedia(0);
-                    }
-                    
-                    // Clean URL
-                    window.history.replaceState({}, document.title, window.location.pathname);
-                    
-                    showNotification('Playlist compartilhada carregada!');
-                } catch (e) {
-                    console.error('Erro ao carregar playlist:', e);
-                    showNotification('Erro ao carregar playlist compartilhada', 'error');
+                    return mediaItem;
+                });
+                
+                // Salvar e renderizar
+                savePlaylist();
+                renderPlaylist();
+                
+                if (playlist.length > 0) {
+                    playMedia(0);
                 }
+                
+                // Limpar URL para evitar recarregamento
+                window.history.replaceState({}, document.title, window.location.pathname);
+                
+                showNotification('Playlist compartilhada carregada com sucesso!');
+                return true;
+                
+            } catch (e) {
+                console.error('Erro ao carregar playlist compartilhada:', e);
+                showNotification('Erro ao carregar playlist compartilhada. Verifique se o link está correto.', 'error');
+                playlist = [];
+                renderPlaylist();
+                return false;
+            } finally {
+                showLoading(false);
             }
         }
         
-        // Extract media ID from URL
-        function extractMediaId(url, platform) {
-            const config = platformConfigs[platform];
-            if (config) {
-                const match = url.match(config.regex);
-                return match ? (match[2] || match[1]) : null;
-            }
-            return null;
+        // Show/hide loading spinner
+        function showLoading(show) {
+            loadingSpinner.style.display = show ? 'block' : 'none';
         }
         
         // Save playlist to localStorage
         function savePlaylist() {
-            localStorage.setItem('mediaflow_playlist', JSON.stringify(playlist));
+            // Remover dados temporários antes de salvar
+            const playlistToSave = playlist.map(media => ({
+                id: media.id,
+                type: media.type,
+                title: media.title,
+                url: media.url,
+                source: media.source,
+                platform: media.platform,
+                duration: media.duration,
+                videoId: media.videoId,
+                thumbnail: media.thumbnail,
+                size: media.size
+            }));
+            
+            localStorage.setItem('mediaflow_playlist', JSON.stringify(playlistToSave));
         }
         
         // Show notification
@@ -1673,7 +1728,13 @@
         // Initialize on load
         window.onload = function() {
             init();
-            loadSharedPlaylist();
+            
+            // Adicionar evento para fechar modal com ESC
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && shareModal.style.display === 'flex') {
+                    closeShareModal();
+                }
+            });
         };
         
         // Handle file input change
@@ -1723,12 +1784,36 @@
             });
         });
         
+        // Adicionar suporte para arrastar e soltar arquivos
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                const mediaData = handleFileUpload(file);
+                if (mediaData) {
+                    playlist.push(mediaData);
+                    savePlaylist();
+                    renderPlaylist();
+                    showNotification('Arquivo adicionado via drag & drop!');
+                    
+                    if (playlist.length === 1) {
+                        playMedia(0);
+                    }
+                }
+            }
+        });
+        
         console.log('🎬 MediaFlow Player carregado com sucesso!');
         console.log('📋 Formatos suportados: Vídeo, Áudio, Imagem');
         console.log('🌐 Plataformas: YouTube, Vimeo, Dailymotion, Spotify, SoundCloud');
         console.log('🛡️ AdBlock integrado para remover anúncios');
         console.log('🎧 Reprodução em segundo plano para áudio');
-        console.log('🔗 Sistema de compartilhamento de playlists');
+        console.log('🔗 Sistema de compartilhamento de playlists corrigido');
     </script>
 </body>
 </html>
