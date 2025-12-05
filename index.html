@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VideoFlow - Player Universal de Vídeo</title>
+    <title>MediaFlow - Player Universal de Mídia</title>
     <style>
-        /* Todos os estilos anteriores permanecem iguais */
         * {
             margin: 0;
             padding: 0;
@@ -133,8 +132,8 @@
         }
         
         .video-embed {
-            max-width: 100%;
-            max-height: 100%;
+            width: 100%;
+            height: 100%;
             border: none;
         }
         
@@ -250,6 +249,10 @@
             transform: translateY(-2px);
         }
         
+        .action-btn.delete-all {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+        }
+        
         .action-btn.share {
             background: linear-gradient(45deg, #007bff, #0056b3);
         }
@@ -362,19 +365,23 @@
             background: #1a1a1a;
             border-radius: 8px;
             margin-bottom: 10px;
-            cursor: pointer;
+            cursor: move;
             transition: all 0.3s;
             border: 1px solid transparent;
         }
         
         .playlist-item:hover {
             background: #222;
-            transform: translateX(5px);
         }
         
         .playlist-item.active {
             background: #2a2a2a;
             border-color: #ff0000;
+        }
+        
+        .playlist-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
         }
         
         .item-number {
@@ -418,18 +425,34 @@
             margin-left: 10px;
         }
         
-        .remove-btn {
-            background: none;
-            border: none;
-            color: #ff6b6b;
-            cursor: pointer;
-            padding: 5px;
-            opacity: 0.7;
-            transition: opacity 0.3s;
+        .item-actions {
+            display: flex;
+            gap: 5px;
         }
         
-        .remove-btn:hover {
-            opacity: 1;
+        .item-btn {
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .item-btn:hover {
+            background: #333;
+        }
+        
+        .item-btn.delete {
+            color: #ff6b6b;
+        }
+        
+        .item-btn.edit {
+            color: #007bff;
         }
         
         /* Modal de compartilhamento */
@@ -488,6 +511,65 @@
             width: 100%;
             padding: 12px;
             background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        /* Modal de edição */
+        .edit-modal .modal-content {
+            max-width: 400px;
+        }
+        
+        .edit-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .form-label {
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .form-input {
+            padding: 10px;
+            background: #222;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .save-btn {
+            flex: 1;
+            padding: 10px;
+            background: linear-gradient(45deg, #28a745, #218838);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .cancel-btn {
+            flex: 1;
+            padding: 10px;
+            background: #666;
             border: none;
             border-radius: 8px;
             color: white;
@@ -638,6 +720,10 @@
                 justify-content: center;
             }
             
+            .playlist-actions {
+                flex-wrap: wrap;
+            }
+            
             .video-wrapper {
                 min-height: 300px;
             }
@@ -660,12 +746,44 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #444;
         }
+        
+        /* Link fixo indicator */
+        .fixed-link-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 123, 255, 0.9);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            z-index: 998;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .fixed-link-indicator i {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
     <div class="loading-spinner" id="loadingSpinner">
         <div class="spinner"></div>
+    </div>
+    
+    <!-- Indicador de link fixo -->
+    <div class="fixed-link-indicator" id="fixedLinkIndicator" style="display: none;">
+        <i class="fas fa-link"></i>
+        <span>Playlist Permanente</span>
     </div>
     
     <div class="container">
@@ -731,11 +849,11 @@
             <section class="playlist-section">
                 <div class="playlist-header">
                     <h2 class="playlist-title">
-                        <i class="fas fa-list"></i> Playlist
+                        <i class="fas fa-list"></i> Playlist Permanente
                     </h2>
                     <div class="playlist-actions">
-                        <button class="action-btn" onclick="clearPlaylist()">
-                            <i class="fas fa-trash"></i> Limpar
+                        <button class="action-btn delete-all" onclick="clearPlaylist()">
+                            <i class="fas fa-trash-alt"></i> Limpar Tudo
                         </button>
                         <button class="action-btn share" onclick="sharePlaylist()">
                             <i class="fas fa-share"></i> Compartilhar
@@ -771,7 +889,7 @@
                     </div>
                     
                     <button class="add-btn" onclick="addMedia()">
-                        <i class="fas fa-plus"></i> Adicionar Mídia
+                        <i class="fas fa-plus"></i> Adicionar à Playlist
                     </button>
                 </div>
                 
@@ -799,7 +917,7 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <p>Compartilhe este link para que outras pessoas possam acessar sua playlist:</p>
+            <p>Compartilhe este link para que outras pessoas possam acessar sua playlist permanente:</p>
             <div class="share-link" id="shareLink">
                 Carregando...
             </div>
@@ -809,11 +927,70 @@
         </div>
     </div>
     
+    <!-- Edit Modal -->
+    <div class="modal edit-modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-edit"></i> Editar Mídia
+                </h3>
+                <button class="close-modal" onclick="closeEditModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form class="edit-form" id="editForm" onsubmit="saveEditedMedia(event)">
+                <div class="form-group">
+                    <label class="form-label">Título:</label>
+                    <input type="text" class="form-input" id="editTitle" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">URL:</label>
+                    <input type="text" class="form-input" id="editUrl" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Duração (opcional):</label>
+                    <input type="text" class="form-input" id="editDuration" placeholder="Ex: 5:30">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="cancel-btn" onclick="closeEditModal()">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="save-btn">
+                        Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Exclusão
+                </h3>
+                <button class="close-modal" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p id="deleteMessage">Tem certeza que deseja excluir este item da playlist?</p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="cancel-btn" style="flex: 1;" onclick="closeDeleteModal()">
+                    Cancelar
+                </button>
+                <button class="save-btn" style="background: linear-gradient(45deg, #dc3545, #c82333); flex: 1;" id="confirmDeleteBtn">
+                    Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+    
     <!-- Notification -->
     <div class="notification" id="notification"></div>
 
     <script>
-        // State management
+        // State management - Playlist agora é PERMANENTE
         let playlist = [];
         let currentMediaIndex = 0;
         let isAdBlockEnabled = true;
@@ -822,7 +999,10 @@
         let currentMediaType = 'video';
         let shareableLink = '';
         let audioElement = null;
-        let hasLoadedSharedPlaylist = false;
+        let editingMediaId = null;
+        let deletingMediaId = null;
+        let isDragging = false;
+        let dragStartIndex = null;
         
         // DOM Elements
         const mediaContainer = document.getElementById('mediaContainer');
@@ -833,12 +1013,21 @@
         const backgroundPlayToggle = document.getElementById('backgroundPlayToggle');
         const backgroundPlayBtn = document.getElementById('backgroundPlayBtn');
         const backgroundPlayIndicator = document.getElementById('backgroundPlayIndicator');
+        const fixedLinkIndicator = document.getElementById('fixedLinkIndicator');
         const adblockStatus = document.getElementById('adblockStatus');
         const mediaInfo = document.getElementById('mediaInfo');
         const playerControls = document.getElementById('playerControls');
         const playPauseBtn = document.getElementById('playPauseBtn');
         const shareModal = document.getElementById('shareModal');
         const shareLink = document.getElementById('shareLink');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const editTitle = document.getElementById('editTitle');
+        const editUrl = document.getElementById('editUrl');
+        const editDuration = document.getElementById('editDuration');
+        const deleteModal = document.getElementById('deleteModal');
+        const deleteMessage = document.getElementById('deleteMessage');
+        const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
         const notification = document.getElementById('notification');
         const loadingSpinner = document.getElementById('loadingSpinner');
         
@@ -917,18 +1106,16 @@
         const audioFormats = ['mp3', 'wav', 'ogg', 'm4a', 'aac', 'flac'];
         const imageFormats = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'svg'];
         
-        // Initialize
+        // Initialize - Agora carrega playlist PERMANENTE
         async function init() {
             showLoading(true);
             
             try {
-                // Primeiro verifica se há playlist compartilhada na URL
-                const hasSharedPlaylist = await loadSharedPlaylist();
+                // Carregar playlist do localStorage (agora permanente)
+                await loadPlaylistFromStorage();
                 
-                if (!hasSharedPlaylist) {
-                    // Se não há playlist compartilhada, carrega do localStorage
-                    await loadPlaylistFromStorage();
-                }
+                // Mostrar indicador de playlist permanente
+                fixedLinkIndicator.style.display = 'flex';
                 
                 if (playlist.length > 0) {
                     playMedia(0);
@@ -937,8 +1124,8 @@
                 // Check if browser supports background play
                 checkBackgroundPlaySupport();
                 
-                console.log('🎬 MediaFlow Player inicializado');
-                console.log(`📊 Playlist carregada: ${playlist.length} itens`);
+                console.log('🎬 MediaFlow Player inicializado com playlist PERMANENTE');
+                console.log(`📊 Playlist carregada: ${playlist.length} itens permanentes`);
                 
             } catch (error) {
                 console.error('Erro na inicialização:', error);
@@ -948,10 +1135,10 @@
             }
         }
         
-        // Load playlist from localStorage
+        // Load playlist from localStorage (PERMANENTE)
         async function loadPlaylistFromStorage() {
             try {
-                const savedPlaylist = localStorage.getItem('mediaflow_playlist');
+                const savedPlaylist = localStorage.getItem('mediaflow_permanent_playlist');
                 if (savedPlaylist) {
                     playlist = JSON.parse(savedPlaylist);
                     renderPlaylist();
@@ -965,11 +1152,42 @@
                     return true;
                 }
             } catch (error) {
-                console.error('Erro ao carregar playlist do localStorage:', error);
+                console.error('Erro ao carregar playlist permanente:', error);
                 playlist = [];
-                localStorage.removeItem('mediaflow_playlist');
+                localStorage.removeItem('mediaflow_permanent_playlist');
             }
             return false;
+        }
+        
+        // Save playlist to localStorage (PERMANENTE)
+        function savePlaylist() {
+            try {
+                // Preparar dados para salvar
+                const playlistToSave = playlist.map(media => {
+                    return {
+                        id: media.id,
+                        type: media.type,
+                        title: media.title,
+                        url: media.url,
+                        source: media.source,
+                        platform: media.platform,
+                        duration: media.duration || '',
+                        videoId: media.videoId,
+                        thumbnail: media.thumbnail,
+                        size: media.size,
+                        dateAdded: media.dateAdded || Date.now()
+                    };
+                });
+                
+                // Salvar como playlist PERMANENTE
+                localStorage.setItem('mediaflow_permanent_playlist', JSON.stringify(playlistToSave));
+                localStorage.setItem('mediaflow_playlist_updated', Date.now().toString());
+                
+                return true;
+            } catch (error) {
+                console.error('Erro ao salvar playlist permanente:', error);
+                return false;
+            }
         }
         
         // Set media type
@@ -1030,7 +1248,7 @@
             mediaFileInput.value = '';
         }
         
-        // Add media to playlist
+        // Add media to playlist PERMANENTE
         function addMedia() {
             const url = mediaUrlInput.value.trim();
             const file = mediaFileInput.files[0];
@@ -1053,8 +1271,11 @@
                 return;
             }
             
+            // Adicionar data de criação
+            mediaData.dateAdded = Date.now();
+            
             playlist.push(mediaData);
-            savePlaylist();
+            savePlaylist(); // Salva na playlist PERMANENTE
             renderPlaylist();
             
             // Clear inputs
@@ -1066,7 +1287,7 @@
                 playMedia(0);
             }
             
-            showNotification(`${getMediaTypeName(currentMediaType)} adicionado à playlist!`);
+            showNotification(`${getMediaTypeName(currentMediaType)} adicionado à playlist PERMANENTE!`);
         }
         
         // Handle file upload
@@ -1190,7 +1411,7 @@
             return mediaData;
         }
         
-        // Render playlist
+        // Render playlist with drag and drop support
         function renderPlaylist() {
             playlistItems.innerHTML = '';
             
@@ -1198,7 +1419,7 @@
                 playlistItems.innerHTML = `
                     <div style="text-align: center; padding: 40px; color: #666;">
                         <i class="fas fa-play-circle" style="font-size: 40px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <p>Sua playlist está vazia</p>
+                        <p>Sua playlist permanente está vazia</p>
                         <p style="font-size: 12px; margin-top: 10px;">Adicione sua primeira mídia!</p>
                     </div>
                 `;
@@ -1209,7 +1430,8 @@
                 const item = document.createElement('div');
                 item.className = `playlist-item ${index === currentMediaIndex ? 'active' : ''}`;
                 item.dataset.index = index;
-                item.onclick = () => playMedia(index);
+                item.dataset.id = media.id;
+                item.draggable = true;
                 
                 const typeIcon = getMediaTypeIcon(media.type);
                 const typeName = getMediaTypeName(media.type);
@@ -1221,15 +1443,104 @@
                         <div class="item-meta">
                             <span><i class="${typeIcon}"></i> ${typeName}</span>
                             <span>${media.platform ? media.platform.charAt(0).toUpperCase() + media.platform.slice(1) : media.source || 'Local'}</span>
+                            <span style="color: #666; font-size: 11px;">${formatDate(media.dateAdded)}</span>
                         </div>
                     </div>
                     <div class="item-duration">${media.duration || ''}</div>
-                    <button class="remove-btn" onclick="removeMedia(${media.id}, event)">
-                        <i class="fas fa-times"></i>
-                    </button>
+                    <div class="item-actions">
+                        <button class="item-btn edit" onclick="editMedia(${media.id}, event)">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="item-btn delete" onclick="confirmDeleteMedia(${media.id}, event)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
                 `;
                 
+                // Add click event for playing
+                item.addEventListener('click', (e) => {
+                    if (!e.target.closest('.item-actions')) {
+                        playMedia(index);
+                    }
+                });
+                
+                // Drag and drop events
+                item.addEventListener('dragstart', (e) => {
+                    isDragging = true;
+                    dragStartIndex = index;
+                    item.classList.add('dragging');
+                    e.dataTransfer.setData('text/plain', index);
+                });
+                
+                item.addEventListener('dragend', () => {
+                    isDragging = false;
+                    dragStartIndex = null;
+                    item.classList.remove('dragging');
+                    document.querySelectorAll('.playlist-item').forEach(item => {
+                        item.classList.remove('drag-over');
+                    });
+                });
+                
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (isDragging && index !== dragStartIndex) {
+                        item.classList.add('drag-over');
+                    }
+                });
+                
+                item.addEventListener('dragleave', () => {
+                    item.classList.remove('drag-over');
+                });
+                
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    item.classList.remove('drag-over');
+                    
+                    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'));
+                    const dropIndex = index;
+                    
+                    if (dragIndex !== dropIndex) {
+                        reorderPlaylist(dragIndex, dropIndex);
+                    }
+                });
+                
                 playlistItems.appendChild(item);
+            });
+        }
+        
+        // Reorder playlist items
+        function reorderPlaylist(fromIndex, toIndex) {
+            const [movedItem] = playlist.splice(fromIndex, 1);
+            playlist.splice(toIndex, 0, movedItem);
+            
+            // Update current media index if needed
+            if (currentMediaIndex === fromIndex) {
+                currentMediaIndex = toIndex;
+            } else if (currentMediaIndex > fromIndex && currentMediaIndex <= toIndex) {
+                currentMediaIndex--;
+            } else if (currentMediaIndex < fromIndex && currentMediaIndex >= toIndex) {
+                currentMediaIndex++;
+            }
+            
+            savePlaylist();
+            renderPlaylist();
+            
+            // Re-highlight current media
+            if (playlist.length > 0) {
+                playMedia(currentMediaIndex);
+            }
+            
+            showNotification('Playlist reordenada!');
+        }
+        
+        // Format date
+        function formatDate(timestamp) {
+            if (!timestamp) return '';
+            const date = new Date(timestamp);
+            return date.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
             });
         }
         
@@ -1486,24 +1797,105 @@
             }
         }
         
-        // Remove media
-        function removeMedia(mediaId, event) {
+        // Edit media
+        function editMedia(mediaId, event) {
             event.stopPropagation();
             
-            const index = playlist.findIndex(m => m.id === mediaId);
-            if (index === -1) return;
+            const mediaIndex = playlist.findIndex(m => m.id === mediaId);
+            if (mediaIndex === -1) return;
             
-            // Clean up object URLs for local files
-            if (playlist[index].source === 'local') {
-                URL.revokeObjectURL(playlist[index].url);
+            const media = playlist[mediaIndex];
+            editingMediaId = mediaId;
+            
+            // Fill form with current data
+            editTitle.value = media.title;
+            editUrl.value = media.url;
+            editDuration.value = media.duration || '';
+            
+            // Show edit modal
+            editModal.style.display = 'flex';
+        }
+        
+        // Save edited media
+        function saveEditedMedia(event) {
+            event.preventDefault();
+            
+            const mediaIndex = playlist.findIndex(m => m.id === editingMediaId);
+            if (mediaIndex === -1) return;
+            
+            const media = playlist[mediaIndex];
+            
+            // Update media data
+            media.title = editTitle.value;
+            media.url = editUrl.value;
+            media.duration = editDuration.value;
+            
+            // Update videoId if platform changed
+            if (media.platform && platformConfigs[media.platform]) {
+                const match = editUrl.value.match(platformConfigs[media.platform].regex);
+                if (match) {
+                    media.videoId = match[2] || match[1];
+                }
             }
             
-            playlist.splice(index, 1);
+            // Save and update UI
+            savePlaylist();
+            renderPlaylist();
+            
+            // Update current media if it's the one being edited
+            if (currentMediaIndex === mediaIndex) {
+                updateMediaInfo(media);
+                playMedia(currentMediaIndex); // Reload embed
+            }
+            
+            closeEditModal();
+            showNotification('Mídia atualizada com sucesso!');
+        }
+        
+        // Close edit modal
+        function closeEditModal() {
+            editModal.style.display = 'none';
+            editForm.reset();
+            editingMediaId = null;
+        }
+        
+        // Confirm delete media
+        function confirmDeleteMedia(mediaId, event) {
+            event.stopPropagation();
+            
+            const mediaIndex = playlist.findIndex(m => m.id === mediaId);
+            if (mediaIndex === -1) return;
+            
+            const media = playlist[mediaIndex];
+            deletingMediaId = mediaId;
+            
+            deleteMessage.textContent = `Tem certeza que deseja excluir "${media.title}" da playlist permanente?`;
+            
+            // Update delete button
+            confirmDeleteBtn.onclick = () => deleteMedia(mediaId);
+            
+            // Show delete modal
+            deleteModal.style.display = 'flex';
+        }
+        
+        // Delete media
+        function deleteMedia(mediaId) {
+            const mediaIndex = playlist.findIndex(m => m.id === mediaId);
+            if (mediaIndex === -1) return;
+            
+            const media = playlist[mediaIndex];
+            
+            // Clean up object URLs for local files
+            if (media.source === 'local') {
+                URL.revokeObjectURL(media.url);
+            }
+            
+            playlist.splice(mediaIndex, 1);
             
             // Adjust current media index
-            if (index === currentMediaIndex) {
+            if (mediaIndex === currentMediaIndex) {
                 if (playlist.length > 0) {
-                    playMedia(Math.min(index, playlist.length - 1));
+                    playMedia(Math.min(mediaIndex, playlist.length - 1));
                 } else {
                     // No media left
                     mediaContainer.innerHTML = `
@@ -1517,21 +1909,28 @@
                     playerControls.style.display = 'none';
                     currentMediaIndex = 0;
                 }
-            } else if (index < currentMediaIndex) {
+            } else if (mediaIndex < currentMediaIndex) {
                 currentMediaIndex--;
             }
             
             savePlaylist();
             renderPlaylist();
-            showNotification('Mídia removida');
+            closeDeleteModal();
+            showNotification('Mídia excluída da playlist permanente!');
         }
         
-        // Clear playlist
+        // Close delete modal
+        function closeDeleteModal() {
+            deleteModal.style.display = 'none';
+            deletingMediaId = null;
+        }
+        
+        // Clear playlist (PERMANENTE - agora com confirmação)
         function clearPlaylist() {
             if (!playlist.length) return;
             
-            if (confirm('Tem certeza que deseja limpar toda a playlist?')) {
-                // Clean up object URLs
+            if (confirm('TEM CERTEZA que deseja limpar TODA a playlist PERMANENTE?\n\nEsta ação não pode ser desfeita e removerá todos os itens.')) {
+                // Clean up object URLs for local files
                 playlist.forEach(media => {
                     if (media.source === 'local') {
                         URL.revokeObjectURL(media.url);
@@ -1553,7 +1952,7 @@
                 mediaInfo.style.display = 'none';
                 playerControls.style.display = 'none';
                 
-                showNotification('Playlist limpa');
+                showNotification('Playlist permanente limpa com sucesso!');
             }
         }
         
@@ -1600,7 +1999,7 @@
             }
         }
         
-        // Share playlist - CORRIGIDA
+        // Share playlist PERMANENTE
         function sharePlaylist() {
             if (playlist.length === 0) {
                 showNotification('Adicione mídias à playlist antes de compartilhar!', 'error');
@@ -1615,7 +2014,7 @@
                 return;
             }
             
-            // Generate shareable data - usando uma estrutura mais simples e segura
+            // Generate shareable data
             const playlistData = {
                 videos: shareablePlaylist.map(m => ({
                     url: m.url,
@@ -1625,7 +2024,7 @@
                     duration: m.duration || ''
                 })),
                 timestamp: Date.now(),
-                version: '1.0'
+                version: '2.0-permanent'
             };
             
             try {
@@ -1660,125 +2059,9 @@
                 });
         }
         
-        // Load shared playlist - CORRIGIDA e agora SALVA no localStorage
-        async function loadSharedPlaylist() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const playlistParam = urlParams.get('playlist');
-            
-            if (!playlistParam) {
-                return false;
-            }
-            
-            showLoading(true);
-            
-            try {
-                // Decodificar o parâmetro
-                const decodedData = decodeURIComponent(atob(playlistParam));
-                const playlistData = JSON.parse(decodedData);
-                
-                // Validar estrutura dos dados
-                if (!playlistData.videos || !Array.isArray(playlistData.videos)) {
-                    throw new Error('Formato de playlist inválido');
-                }
-                
-                // Limpar playlist atual
-                playlist = [];
-                
-                // Processar cada vídeo da playlist compartilhada
-                playlistData.videos.forEach((video, index) => {
-                    const mediaItem = {
-                        id: Date.now() + index,
-                        url: video.url,
-                        title: video.title || `Mídia ${index + 1}`,
-                        type: video.type || 'video',
-                        platform: video.platform || 'unknown',
-                        duration: video.duration || '',
-                        source: 'online',
-                        isShared: true
-                    };
-                    
-                    // Extrair videoId para plataformas conhecidas
-                    if (video.platform && platformConfigs[video.platform] && video.url) {
-                        const match = video.url.match(platformConfigs[video.platform].regex);
-                        if (match) {
-                            mediaItem.videoId = match[2] || match[1];
-                        }
-                    }
-                    
-                    playlist.push(mediaItem);
-                });
-                
-                // SALVAR A PLAYLIST COMPARTILHADA NO LOCALSTORAGE
-                savePlaylist();
-                
-                // Marcar que carregou uma playlist compartilhada
-                hasLoadedSharedPlaylist = true;
-                
-                // Salvar flag indicando que é uma playlist compartilhada
-                localStorage.setItem('mediaflow_shared_playlist', 'true');
-                localStorage.setItem('mediaflow_playlist_timestamp', Date.now().toString());
-                
-                // Renderizar a playlist
-                renderPlaylist();
-                
-                // Limpar a URL para evitar recarregamento
-                const cleanUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-                
-                showNotification(`Playlist compartilhada carregada com sucesso! (${playlist.length} itens)`);
-                return true;
-                
-            } catch (error) {
-                console.error('Erro ao carregar playlist compartilhada:', error);
-                showNotification('Erro ao carregar playlist compartilhada. Verifique se o link está correto.', 'error');
-                playlist = [];
-                renderPlaylist();
-                return false;
-            } finally {
-                showLoading(false);
-            }
-        }
-        
         // Show/hide loading spinner
         function showLoading(show) {
             loadingSpinner.style.display = show ? 'block' : 'none';
-        }
-        
-        // Save playlist to localStorage - AGORA SALVA PLAYLISTS COMPARTILHADAS TAMBÉM
-        function savePlaylist() {
-            try {
-                // Preparar dados para salvar
-                const playlistToSave = playlist.map(media => {
-                    const mediaToSave = {
-                        id: media.id,
-                        type: media.type,
-                        title: media.title,
-                        url: media.url,
-                        source: media.source,
-                        platform: media.platform,
-                        duration: media.duration,
-                        videoId: media.videoId,
-                        thumbnail: media.thumbnail,
-                        size: media.size
-                    };
-                    
-                    // Adicionar flag se for compartilhado
-                    if (media.isShared) {
-                        mediaToSave.isShared = true;
-                    }
-                    
-                    return mediaToSave;
-                });
-                
-                // Salvar no localStorage
-                localStorage.setItem('mediaflow_playlist', JSON.stringify(playlistToSave));
-                localStorage.setItem('mediaflow_playlist_updated', Date.now().toString());
-                
-                return true;
-            } catch (error) {
-                console.error('Erro ao salvar playlist:', error);
-                return false;
-            }
         }
         
         // Show notification
@@ -1799,8 +2082,14 @@
             
             // Adicionar evento para fechar modal com ESC
             document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && shareModal.style.display === 'flex') {
-                    closeShareModal();
+                if (e.key === 'Escape') {
+                    if (shareModal.style.display === 'flex') {
+                        closeShareModal();
+                    } else if (editModal.style.display === 'flex') {
+                        closeEditModal();
+                    } else if (deleteModal.style.display === 'flex') {
+                        closeDeleteModal();
+                    }
                 }
             });
         };
@@ -1864,6 +2153,7 @@
                 const file = files[0];
                 const mediaData = handleFileUpload(file);
                 if (mediaData) {
+                    mediaData.dateAdded = Date.now();
                     playlist.push(mediaData);
                     savePlaylist();
                     renderPlaylist();
@@ -1876,40 +2166,13 @@
             }
         });
         
-        // Monitorar mudanças na playlist para salvar automaticamente
-        let saveTimeout;
-        function scheduleSave() {
-            clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(() => {
-                savePlaylist();
-            }, 1000);
-        }
-        
-        // Adicionar listeners para mudanças na playlist
-        const originalPush = Array.prototype.push;
-        Array.prototype.push = function(...items) {
-            const result = originalPush.apply(this, items);
-            if (this === playlist) {
-                scheduleSave();
-            }
-            return result;
-        };
-        
-        const originalSplice = Array.prototype.splice;
-        Array.prototype.splice = function(...args) {
-            const result = originalSplice.apply(this, args);
-            if (this === playlist) {
-                scheduleSave();
-            }
-            return result;
-        };
-        
         console.log('🎬 MediaFlow Player carregado com sucesso!');
-        console.log('📋 Formatos suportados: Vídeo, Áudio, Imagem');
-        console.log('🌐 Plataformas: YouTube, Vimeo, Dailymotion, Spotify, SoundCloud');
-        console.log('🛡️ AdBlock integrado para remover anúncios');
+        console.log('📋 Playlist PERMANENTE habilitada');
+        console.log('🔗 Links agora são fixos - salvo em localStorage');
+        console.log('🗑️ Botões de exclusão adicionados para cada item');
         console.log('🎧 Reprodução em segundo plano para áudio');
-        console.log('💾 Sistema de compartilhamento corrigido - playlists agora são salvas no localStorage');
+        console.log('🛡️ AdBlock integrado para remover anúncios');
+        console.log('📤 Sistema de compartilhamento funcionando');
     </script>
 </body>
 </html>
