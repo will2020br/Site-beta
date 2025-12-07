@@ -129,6 +129,7 @@
         .hero-buttons {
             display: flex;
             gap: 15px;
+            flex-wrap: wrap;
         }
         
         .hero-btn {
@@ -747,13 +748,54 @@
             border: 1px solid #444;
         }
         
+        .shortened-link {
+            background: #333;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 14px;
+            color: #00ff00;
+            border: 1px solid #444;
+            display: none;
+        }
+        
+        .link-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .link-option-btn {
+            flex: 1;
+            padding: 10px;
+            background: #444;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .link-option-btn.active {
+            background: #e50914;
+        }
+        
+        .link-option-btn:hover:not(.active) {
+            background: #555;
+        }
+        
         .share-actions {
             display: flex;
             gap: 10px;
+            flex-wrap: wrap;
         }
         
         .share-action-btn {
             flex: 1;
+            min-width: 120px;
             padding: 12px;
             border-radius: 5px;
             border: none;
@@ -782,9 +824,31 @@
             color: white;
         }
         
+        .share-action-btn.telegram {
+            background: linear-gradient(45deg, #0088cc, #006699);
+            color: white;
+        }
+        
+        .share-action-btn.shorten {
+            background: linear-gradient(45deg, #ff6b35, #ff4500);
+            color: white;
+        }
+        
         .share-action-btn:hover {
             opacity: 0.9;
             transform: translateY(-2px);
+        }
+        
+        .share-loading {
+            text-align: center;
+            padding: 10px;
+            color: #b3b3b3;
+            display: none;
+        }
+        
+        .share-loading i {
+            margin-right: 10px;
+            animation: spin 1s linear infinite;
         }
         
         /* Notification */
@@ -855,6 +919,10 @@
             .share-actions {
                 flex-direction: column;
             }
+            
+            .share-action-btn {
+                min-width: 100%;
+            }
         }
         
         @media (max-width: 768px) {
@@ -919,6 +987,10 @@
             .content-card {
                 min-width: 150px;
                 height: 225px;
+            }
+            
+            .link-options {
+                flex-direction: column;
             }
         }
         
@@ -1148,10 +1220,22 @@
                     </p>
                 </div>
                 
+                <div class="link-options">
+                    <button class="link-option-btn active" onclick="showLinkType('direct')">Link Direto</button>
+                    <button class="link-option-btn" onclick="showLinkType('shortened')">Link Encurtado</button>
+                </div>
+                
                 <div class="share-link-container">
                     <div class="share-link" id="shareLink">
                         Gerando link de compartilhamento...
                     </div>
+                    <div class="shortened-link" id="shortenedLink">
+                        Gerando link encurtado...
+                    </div>
+                </div>
+                
+                <div class="share-loading" id="shareLoading">
+                    <i class="fas fa-spinner"></i> Gerando link encurtado...
                 </div>
                 
                 <div class="share-actions">
@@ -1163,6 +1247,12 @@
                     </button>
                     <button class="share-action-btn whatsapp" onclick="shareToWhatsApp()">
                         <i class="fab fa-whatsapp"></i> WhatsApp
+                    </button>
+                    <button class="share-action-btn telegram" onclick="shareToTelegram()">
+                        <i class="fab fa-telegram"></i> Telegram
+                    </button>
+                    <button class="share-action-btn shorten" onclick="generateShortenedLink()">
+                        <i class="fas fa-link"></i> Encurtar
                     </button>
                 </div>
             </div>
@@ -1190,6 +1280,12 @@
         let isAdBlockEnabled = true;
         let isSidebarOpen = false;
         let shareableLink = '';
+        let shortenedLink = '';
+        let currentLinkType = 'direct';
+        
+        // URL Shortener Configuration
+        const SHORTENER_API = 'https://api.shrtco.de/v2/shorten?url=';
+        const BACKUP_SHORTENER = 'https://tinyurl.com/api-create.php?url=';
         
         // DOM Elements
         const playerModal = document.getElementById('playerModal');
@@ -1208,12 +1304,531 @@
         const embedForm = document.getElementById('embedForm');
         const shareModal = document.getElementById('shareModal');
         const shareLink = document.getElementById('shareLink');
+        const shortenedLinkEl = document.getElementById('shortenedLink');
+        const shareLoading = document.getElementById('shareLoading');
         const shareTotalItems = document.getElementById('shareTotalItems');
         const shareTotalViews = document.getElementById('shareTotalViews');
         const shareLastUpdated = document.getElementById('shareLastUpdated');
         
+        // Initialize
+        function init() {
+            loadPlaylist();
+            updateUI();
+            setupEventListeners();
+            
+            // Header scroll effect
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 100) {
+                    netflixHeader.classList.add('scrolled');
+                } else {
+                    netflixHeader.classList.remove('scrolled');
+                }
+            });
+            
+            // Platform selector change
+            document.getElementById('embedPlatform').addEventListener('change', function() {
+                const platform = this.value;
+                const embedCodeInput = document.getElementById('embedCode');
+                const placeholder = getPlaceholderForPlatform(platform);
+                embedCodeInput.placeholder = placeholder;
+            });
+            
+            // Load shared playlist from URL
+            loadSharedPlaylistFromURL();
+            
+            console.log('🎬 StreamFlow iniciado com sucesso!');
+            console.log('🔗 Sistema de links encurtados implementado');
+        }
+        
+        // Generate shareable link (versão melhorada)
+        async function generateShareLink() {
+            if (playlist.length === 0) {
+                throw new Error('Playlist vazia');
+            }
+            
+            // Prepare complete playlist data with all settings
+            const shareData = {
+                playlist: playlist.map(item => ({
+                    id: item.id,
+                    title: item.title,
+                    image: item.image,
+                    platform: item.platform,
+                    embed: item.embed,
+                    settings: item.settings,
+                    originalUrl: item.originalUrl || item.embed,
+                    dateAdded: item.dateAdded,
+                    views: item.views,
+                    category: item.category,
+                    metadata: item.metadata
+                })),
+                metadata: {
+                    totalItems: playlist.length,
+                    totalViews: playlist.reduce((sum, item) => sum + (item.views || 0), 0),
+                    lastUpdated: Date.now(),
+                    createdBy: 'StreamFlow',
+                    version: '3.0'
+                },
+                appState: {
+                    theme: 'netflix-dark',
+                    layout: 'grid',
+                    autoplay: true,
+                    shareTimestamp: new Date().toISOString()
+                }
+            };
+            
+            // Create a unique ID for this playlist
+            const playlistId = generatePlaylistId();
+            
+            // Store playlist data in localStorage with unique ID
+            localStorage.setItem(`streamflow_shared_${playlistId}`, JSON.stringify(shareData));
+            
+            // Generate direct link
+            const directLink = `${window.location.origin}${window.location.pathname}?playlist=${playlistId}`;
+            
+            return {
+                directLink,
+                playlistId,
+                shareData
+            };
+        }
+        
+        // Generate unique playlist ID
+        function generatePlaylistId() {
+            const timestamp = Date.now().toString(36);
+            const random = Math.random().toString(36).substr(2, 9);
+            return `pl_${timestamp}_${random}`;
+        }
+        
+        // Share complete playlist with all settings
+        async function shareCompletePlaylist() {
+            if (playlist.length === 0) {
+                showNotification('Adicione conteúdos à playlist antes de compartilhar!', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            
+            try {
+                // Generate share link
+                const { directLink, shareData } = await generateShareLink();
+                
+                // Calculate stats for display
+                const totalViews = playlist.reduce((sum, item) => sum + (item.views || 0), 0);
+                const lastUpdated = new Date().toLocaleDateString('pt-BR');
+                
+                // Update share modal stats
+                shareTotalItems.textContent = playlist.length;
+                shareTotalViews.textContent = totalViews;
+                shareLastUpdated.textContent = lastUpdated;
+                
+                // Set direct link
+                shareableLink = directLink;
+                shareLink.textContent = directLink;
+                
+                // Reset shortened link
+                shortenedLink = '';
+                shortenedLinkEl.textContent = 'Clique em "Encurtar" para gerar link curto';
+                shortenedLinkEl.style.display = 'none';
+                
+                // Reset link type buttons
+                document.querySelectorAll('.link-option-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.querySelector('.link-option-btn').classList.add('active');
+                currentLinkType = 'direct';
+                
+                // Open share modal
+                shareModal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                
+                // Try to generate shortened link automatically
+                setTimeout(() => {
+                    generateShortenedLink();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Erro ao gerar link de compartilhamento:', error);
+                showNotification('Erro ao gerar link de compartilhamento', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Generate shortened link using URL shortener service
+        async function generateShortenedLink() {
+            if (!shareableLink) return;
+            
+            shareLoading.style.display = 'block';
+            shortenedLinkEl.style.display = 'none';
+            
+            try {
+                // Try primary shortener (shrtco.de)
+                const primaryUrl = `${SHORTENER_API}${encodeURIComponent(shareableLink)}`;
+                const primaryResponse = await fetch(primaryUrl);
+                
+                if (primaryResponse.ok) {
+                    const data = await primaryResponse.json();
+                    if (data.ok) {
+                        shortenedLink = data.result.full_short_link2 || data.result.full_short_link;
+                        shortenedLinkEl.textContent = shortenedLink;
+                        shortenedLinkEl.style.display = 'block';
+                        shareLoading.style.display = 'none';
+                        showNotification('Link encurtado gerado com sucesso!');
+                        return;
+                    }
+                }
+                
+                // If primary fails, try backup (tinyurl)
+                const backupUrl = `${BACKUP_SHORTENER}${encodeURIComponent(shareableLink)}`;
+                const backupResponse = await fetch(backupUrl);
+                
+                if (backupResponse.ok) {
+                    const tinyUrl = await backupResponse.text();
+                    if (tinyUrl && tinyUrl.startsWith('http')) {
+                        shortenedLink = tinyUrl;
+                        shortenedLinkEl.textContent = shortenedLink;
+                        shortenedLinkEl.style.display = 'block';
+                        shareLoading.style.display = 'none';
+                        showNotification('Link encurtado gerado com sucesso!');
+                        return;
+                    }
+                }
+                
+                // If both fail, create our own short link
+                shortenedLink = createCustomShortLink();
+                shortenedLinkEl.textContent = shortenedLink;
+                shortenedLinkEl.style.display = 'block';
+                shareLoading.style.display = 'none';
+                showNotification('Link encurtado gerado localmente!');
+                
+            } catch (error) {
+                console.error('Erro ao encurtar link:', error);
+                // Fallback to custom short link
+                shortenedLink = createCustomShortLink();
+                shortenedLinkEl.textContent = shortenedLink;
+                shortenedLinkEl.style.display = 'block';
+                shareLoading.style.display = 'none';
+                showNotification('Link encurtado gerado localmente!');
+            }
+        }
+        
+        // Create custom short link (fallback)
+        function createCustomShortLink() {
+            // Generate a short hash for the playlist
+            const playlistHash = btoa(JSON.stringify(playlist.map(item => item.id)))
+                .replace(/[+/=]/g, '')
+                .substr(0, 8)
+                .toLowerCase();
+            
+            return `${window.location.origin}/p/${playlistHash}`;
+        }
+        
+        // Show link type (direct or shortened)
+        function showLinkType(type) {
+            currentLinkType = type;
+            
+            // Update button states
+            document.querySelectorAll('.link-option-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide links
+            if (type === 'direct') {
+                shareLink.style.display = 'block';
+                shortenedLinkEl.style.display = 'none';
+            } else {
+                shareLink.style.display = 'none';
+                if (shortenedLink) {
+                    shortenedLinkEl.style.display = 'block';
+                } else {
+                    generateShortenedLink();
+                }
+            }
+        }
+        
+        // Copy share link to clipboard
+        async function copyShareLink() {
+            const linkToCopy = currentLinkType === 'direct' ? shareableLink : shortenedLink;
+            
+            if (!linkToCopy) {
+                showNotification('Nenhum link disponível para copiar!', 'error');
+                return;
+            }
+            
+            try {
+                await navigator.clipboard.writeText(linkToCopy);
+                showNotification('Link copiado para a área de transferência!');
+                
+                // Visual feedback
+                const copyBtn = document.querySelector('.share-action-btn.copy');
+                const originalText = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
+                copyBtn.style.background = 'linear-gradient(45deg, #28a745, #218838)';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalText;
+                    copyBtn.style.background = 'linear-gradient(45deg, #28a745, #218838)';
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Erro ao copiar link:', error);
+                showNotification('Erro ao copiar link', 'error');
+            }
+        }
+        
+        // Open share link in new tab
+        function openShareLink() {
+            const linkToOpen = currentLinkType === 'direct' ? shareableLink : shortenedLink;
+            
+            if (!linkToOpen) {
+                showNotification('Nenhum link disponível para abrir!', 'error');
+                return;
+            }
+            
+            window.open(linkToOpen, '_blank');
+            showNotification('Abrindo playlist em nova aba...');
+        }
+        
+        // Share to WhatsApp
+        function shareToWhatsApp() {
+            const linkToShare = currentLinkType === 'direct' ? shareableLink : shortenedLink;
+            
+            if (!linkToShare) {
+                showNotification('Nenhum link disponível para compartilhar!', 'error');
+                return;
+            }
+            
+            const message = `🎬 Confira minha playlist no StreamFlow!\n\n${linkToShare}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            showNotification('Compartilhando no WhatsApp...');
+        }
+        
+        // Share to Telegram
+        function shareToTelegram() {
+            const linkToShare = currentLinkType === 'direct' ? shareableLink : shortenedLink;
+            
+            if (!linkToShare) {
+                showNotification('Nenhum link disponível para compartilhar!', 'error');
+                return;
+            }
+            
+            const message = `Confira minha playlist no StreamFlow: ${linkToShare}`;
+            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(linkToShare)}&text=${encodeURIComponent(message)}`;
+            window.open(telegramUrl, '_blank');
+            showNotification('Compartilhando no Telegram...');
+        }
+        
+        // Load shared playlist from URL
+        async function loadSharedPlaylistFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const playlistId = urlParams.get('playlist');
+            
+            if (!playlistId) return;
+            
+            showLoading(true);
+            
+            try {
+                // Try to load from localStorage
+                const savedData = localStorage.getItem(`streamflow_shared_${playlistId}`);
+                
+                if (savedData) {
+                    const shareData = JSON.parse(savedData);
+                    
+                    if (!shareData.playlist || !Array.isArray(shareData.playlist)) {
+                        throw new Error('Formato de playlist inválido');
+                    }
+                    
+                    // Clear current playlist and load shared one
+                    playlist = shareData.playlist.map(item => ({
+                        ...item,
+                        settings: item.settings || {
+                            autoplay: true,
+                            controls: true,
+                            fullscreen: false
+                        },
+                        views: item.views || 0,
+                        dateAdded: item.dateAdded || Date.now()
+                    }));
+                    
+                    // Save to localStorage as user's own playlist
+                    savePlaylist();
+                    
+                    // Update UI
+                    updateUI();
+                    
+                    // Show success message
+                    showNotification(`Playlist compartilhada carregada com sucesso! (${playlist.length} itens)`);
+                    
+                    // Clear URL parameter
+                    const cleanUrl = window.location.origin + window.location.pathname;
+                    window.history.replaceState({}, document.title, cleanUrl);
+                } else {
+                    // Try to load from hash-based URL
+                    if (playlistId.startsWith('pl_')) {
+                        showNotification('Playlist não encontrada ou expirada', 'error');
+                    } else {
+                        // Try old format (base64 encoded)
+                        try {
+                            const jsonString = decodeURIComponent(atob(playlistId));
+                            const shareData = JSON.parse(jsonString);
+                            
+                            if (shareData.playlist) {
+                                playlist = shareData.playlist;
+                                savePlaylist();
+                                updateUI();
+                                showNotification(`Playlist antiga carregada! (${playlist.length} itens)`);
+                            }
+                        } catch (e) {
+                            console.error('Erro ao carregar playlist antiga:', e);
+                        }
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Erro ao carregar playlist compartilhada:', error);
+                showNotification('Erro ao carregar playlist compartilhada', 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Close share modal
+        function closeShareModal() {
+            shareModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+            shareLoading.style.display = 'none';
+        }
+        
+        // Rest of the functions remain the same as before...
+        // [Previous functions like loadPlaylist, savePlaylist, addQuickEmbed, etc.]
+        
+        // Get placeholder for platform
+        function getPlaceholderForPlatform(platform) {
+            switch(platform) {
+                case 'youtube': return 'Cole o link do YouTube (ex: https://youtube.com/watch?v=ABC123)';
+                case 'vimeo': return 'Cole o link do Vimeo (ex: https://vimeo.com/123456789)';
+                case 'custom': return 'Cole o código iframe completo ou URL do embed';
+                case 'direct': return 'Cole a URL direta do vídeo ou stream';
+                default: return 'Cole aqui o link do vídeo ou código iframe completo...';
+            }
+        }
+        
+        // Load playlist from localStorage
+        function loadPlaylist() {
+            try {
+                const saved = localStorage.getItem('streamflow_playlist');
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    playlist = parsed.map(item => ({
+                        ...item,
+                        settings: item.settings || {
+                            autoplay: true,
+                            controls: true,
+                            fullscreen: false
+                        },
+                        views: item.views || 0,
+                        dateAdded: item.dateAdded || Date.now()
+                    }));
+                    console.log(`📊 Playlist carregada: ${playlist.length} itens`);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar playlist:', error);
+                playlist = [];
+            }
+        }
+        
+        // Save playlist to localStorage
+        function savePlaylist() {
+            try {
+                localStorage.setItem('streamflow_playlist', JSON.stringify(playlist));
+                localStorage.setItem('streamflow_last_updated', Date.now().toString());
+            } catch (error) {
+                console.error('Erro ao salvar playlist:', error);
+            }
+        }
+        
+        // Add quick embed with settings
+        function addQuickEmbed(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('embedTitle').value.trim();
+            const image = document.getElementById('embedImage').value.trim();
+            const platform = document.getElementById('embedPlatform').value;
+            const code = document.getElementById('embedCode').value.trim();
+            
+            // Get advanced settings
+            const settings = {
+                autoplay: document.getElementById('embedAutoplay').checked,
+                controls: document.getElementById('embedControls').checked,
+                fullscreen: document.getElementById('embedFullscreen').checked
+            };
+            
+            if (!title || !code) {
+                showNotification('Preencha todos os campos obrigatórios!', 'error');
+                return;
+            }
+            
+            // Generate embed HTML with settings
+            let embedHtml = null;
+            if (window.embedTemplates && window.embedTemplates[platform]) {
+                embedHtml = window.embedTemplates[platform](code, settings);
+            }
+            
+            if (!embedHtml) {
+                showNotification('Não foi possível processar o embed. Verifique o formato!', 'error');
+                return;
+            }
+            
+            // Create media item with all settings
+            const mediaItem = {
+                id: Date.now(),
+                title: title,
+                image: image || getDefaultImage(platform),
+                platform: platform,
+                embed: embedHtml,
+                settings: settings,
+                dateAdded: Date.now(),
+                category: 'personal',
+                views: 0,
+                originalUrl: code,
+                metadata: {
+                    createdAt: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    screenResolution: `${window.screen.width}x${window.screen.height}`
+                }
+            };
+            
+            // Add to playlist
+            playlist.unshift(mediaItem);
+            savePlaylist();
+            updateUI();
+            
+            // Clear form
+            embedForm.reset();
+            document.getElementById('embedPlatform').value = 'youtube';
+            document.getElementById('embedCode').placeholder = getPlaceholderForPlatform('youtube');
+            document.getElementById('embedAutoplay').checked = true;
+            document.getElementById('embedControls').checked = true;
+            document.getElementById('embedFullscreen').checked = false;
+            
+            showNotification(`"${title}" adicionado à playlist com configurações salvas!`);
+        }
+        
+        // Get default image for platform
+        function getDefaultImage(platform) {
+            const images = {
+                'youtube': 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
+                'vimeo': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
+                'custom': 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
+                'direct': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
+            };
+            return images[platform] || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
+        }
+        
         // Platform Templates
-        const embedTemplates = {
+        window.embedTemplates = {
             'youtube': (url, settings) => {
                 const videoId = extractYouTubeId(url);
                 if (videoId) {
@@ -1298,165 +1913,6 @@
                         frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''}></iframe>`;
             }
         };
-        
-        // Initialize
-        function init() {
-            loadPlaylist();
-            updateUI();
-            setupEventListeners();
-            
-            // Header scroll effect
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 100) {
-                    netflixHeader.classList.add('scrolled');
-                } else {
-                    netflixHeader.classList.remove('scrolled');
-                }
-            });
-            
-            // Platform selector change
-            document.getElementById('embedPlatform').addEventListener('change', function() {
-                const platform = this.value;
-                const embedCodeInput = document.getElementById('embedCode');
-                const placeholder = getPlaceholderForPlatform(platform);
-                embedCodeInput.placeholder = placeholder;
-            });
-            
-            // Load shared playlist from URL
-            loadSharedPlaylistFromURL();
-            
-            console.log('🎬 StreamFlow iniciado com sucesso!');
-            console.log('📋 Sistema de compartilhamento completo implementado');
-        }
-        
-        // Get placeholder for platform
-        function getPlaceholderForPlatform(platform) {
-            switch(platform) {
-                case 'youtube':
-                    return 'Cole o link do YouTube (ex: https://youtube.com/watch?v=ABC123)';
-                case 'vimeo':
-                    return 'Cole o link do Vimeo (ex: https://vimeo.com/123456789)';
-                case 'custom':
-                    return 'Cole o código iframe completo ou URL do embed';
-                case 'direct':
-                    return 'Cole a URL direta do vídeo ou stream';
-                default:
-                    return 'Cole aqui o link do vídeo ou código iframe completo...';
-            }
-        }
-        
-        // Load playlist from localStorage
-        function loadPlaylist() {
-            try {
-                const saved = localStorage.getItem('streamflow_playlist');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    playlist = parsed.map(item => ({
-                        ...item,
-                        // Ensure all properties exist
-                        settings: item.settings || {
-                            autoplay: true,
-                            controls: true,
-                            fullscreen: false
-                        },
-                        views: item.views || 0,
-                        dateAdded: item.dateAdded || Date.now()
-                    }));
-                    console.log(`📊 Playlist carregada: ${playlist.length} itens`);
-                }
-            } catch (error) {
-                console.error('Erro ao carregar playlist:', error);
-                playlist = [];
-            }
-        }
-        
-        // Save playlist to localStorage
-        function savePlaylist() {
-            try {
-                localStorage.setItem('streamflow_playlist', JSON.stringify(playlist));
-                localStorage.setItem('streamflow_last_updated', Date.now().toString());
-            } catch (error) {
-                console.error('Erro ao salvar playlist:', error);
-            }
-        }
-        
-        // Add quick embed with settings
-        function addQuickEmbed(event) {
-            event.preventDefault();
-            
-            const title = document.getElementById('embedTitle').value.trim();
-            const image = document.getElementById('embedImage').value.trim();
-            const platform = document.getElementById('embedPlatform').value;
-            const code = document.getElementById('embedCode').value.trim();
-            
-            // Get advanced settings
-            const settings = {
-                autoplay: document.getElementById('embedAutoplay').checked,
-                controls: document.getElementById('embedControls').checked,
-                fullscreen: document.getElementById('embedFullscreen').checked
-            };
-            
-            if (!title || !code) {
-                showNotification('Preencha todos os campos obrigatórios!', 'error');
-                return;
-            }
-            
-            // Generate embed HTML with settings
-            let embedHtml = null;
-            if (embedTemplates[platform]) {
-                embedHtml = embedTemplates[platform](code, settings);
-            }
-            
-            if (!embedHtml) {
-                showNotification('Não foi possível processar o embed. Verifique o formato!', 'error');
-                return;
-            }
-            
-            // Create media item with all settings
-            const mediaItem = {
-                id: Date.now(),
-                title: title,
-                image: image || getDefaultImage(platform),
-                platform: platform,
-                embed: embedHtml,
-                settings: settings,
-                dateAdded: Date.now(),
-                category: 'personal',
-                views: 0,
-                originalUrl: code,
-                metadata: {
-                    createdAt: new Date().toISOString(),
-                    userAgent: navigator.userAgent,
-                    screenResolution: `${window.screen.width}x${window.screen.height}`
-                }
-            };
-            
-            // Add to playlist
-            playlist.unshift(mediaItem);
-            savePlaylist();
-            updateUI();
-            
-            // Clear form
-            embedForm.reset();
-            document.getElementById('embedPlatform').value = 'youtube';
-            document.getElementById('embedCode').placeholder = getPlaceholderForPlatform('youtube');
-            document.getElementById('embedAutoplay').checked = true;
-            document.getElementById('embedControls').checked = true;
-            document.getElementById('embedFullscreen').checked = false;
-            
-            showNotification(`"${title}" adicionado à playlist com configurações salvas!`);
-        }
-        
-        // Get default image for platform
-        function getDefaultImage(platform) {
-            const images = {
-                'youtube': 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'vimeo': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'custom': 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'direct': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-            };
-            return images[platform] || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
-        }
         
         // Extract YouTube video ID
         function extractYouTubeId(url) {
@@ -1545,7 +2001,7 @@
         function updatePlaylistPreview() {
             playlistPreview.innerHTML = '';
             
-            const previewItems = playlist.slice(0, 6); // Show first 6 items
+            const previewItems = playlist.slice(0, 6);
             
             previewItems.forEach((item, index) => {
                 const card = createContentCard(item, index);
@@ -1560,52 +2016,6 @@
                         <button class="hero-btn play" onclick="openQuickEmbed()" style="margin-top: 20px;">
                             <i class="fas fa-plus"></i> Adicionar Primeiro Item
                         </button>
-                    </div>
-                `;
-            }
-        }
-        
-        // Update recent content
-        function updateRecentContent() {
-            recentContent.innerHTML = '';
-            
-            const recentItems = [...playlist]
-                .sort((a, b) => b.dateAdded - a.dateAdded)
-                .slice(0, 8);
-            
-            recentItems.forEach((item, index) => {
-                const card = createContentCard(item, index);
-                recentContent.appendChild(card);
-            });
-            
-            if (recentItems.length === 0) {
-                recentContent.innerHTML = `
-                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
-                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
-                        <i class="fas fa-clock" style="font-size: 48px; opacity: 0.3;"></i>
-                    </div>
-                `;
-            }
-        }
-        
-        // Update popular content (based on views)
-        function updatePopularContent() {
-            popularContent.innerHTML = '';
-            
-            const popularItems = [...playlist]
-                .sort((a, b) => b.views - a.views)
-                .slice(0, 8);
-            
-            popularItems.forEach((item, index) => {
-                const card = createContentCard(item, index);
-                popularContent.appendChild(card);
-            });
-            
-            if (popularItems.length === 0) {
-                popularContent.innerHTML = `
-                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
-                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
-                        <i class="fas fa-fire" style="font-size: 48px; opacity: 0.3;"></i>
                     </div>
                 `;
             }
@@ -1656,6 +2066,52 @@
             });
             
             return card;
+        }
+        
+        // Update recent content
+        function updateRecentContent() {
+            recentContent.innerHTML = '';
+            
+            const recentItems = [...playlist]
+                .sort((a, b) => b.dateAdded - a.dateAdded)
+                .slice(0, 8);
+            
+            recentItems.forEach((item, index) => {
+                const card = createContentCard(item, index);
+                recentContent.appendChild(card);
+            });
+            
+            if (recentItems.length === 0) {
+                recentContent.innerHTML = `
+                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
+                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
+                        <i class="fas fa-clock" style="font-size: 48px; opacity: 0.3;"></i>
+                    </div>
+                `;
+            }
+        }
+        
+        // Update popular content
+        function updatePopularContent() {
+            popularContent.innerHTML = '';
+            
+            const popularItems = [...playlist]
+                .sort((a, b) => b.views - a.views)
+                .slice(0, 8);
+            
+            popularItems.forEach((item, index) => {
+                const card = createContentCard(item, index);
+                popularContent.appendChild(card);
+            });
+            
+            if (popularItems.length === 0) {
+                popularContent.innerHTML = `
+                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
+                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
+                        <i class="fas fa-fire" style="font-size: 48px; opacity: 0.3;"></i>
+                    </div>
+                `;
+            }
         }
         
         // Update playlist badge
@@ -1728,7 +2184,7 @@
             `;
         }
         
-        // Edit media settings
+        // Edit media
         function editMedia(id, event) {
             if (event) event.stopPropagation();
             
@@ -1814,8 +2270,8 @@
             };
             
             // Regenerate embed with new settings
-            if (embedTemplates[media.platform]) {
-                media.embed = embedTemplates[media.platform](media.originalUrl || media.embed, media.settings);
+            if (window.embedTemplates[media.platform]) {
+                media.embed = window.embedTemplates[media.platform](media.originalUrl || media.embed, media.settings);
             }
             
             savePlaylist();
@@ -1872,154 +2328,6 @@
             closePlayer();
             
             showNotification('Playlist limpa com sucesso!');
-        }
-        
-        // Share complete playlist with all settings
-        function shareCompletePlaylist() {
-            if (playlist.length === 0) {
-                showNotification('Adicione conteúdos à playlist antes de compartilhar!', 'error');
-                return;
-            }
-            
-            // Prepare complete playlist data with all settings
-            const shareData = {
-                playlist: playlist.map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    image: item.image,
-                    platform: item.platform,
-                    embed: item.embed,
-                    settings: item.settings,
-                    originalUrl: item.originalUrl || item.embed,
-                    dateAdded: item.dateAdded,
-                    views: item.views,
-                    category: item.category,
-                    metadata: item.metadata
-                })),
-                metadata: {
-                    totalItems: playlist.length,
-                    totalViews: playlist.reduce((sum, item) => sum + (item.views || 0), 0),
-                    lastUpdated: Date.now(),
-                    createdBy: 'StreamFlow',
-                    version: '2.0'
-                },
-                appState: {
-                    theme: 'netflix-dark',
-                    layout: 'grid',
-                    autoplay: true,
-                    shareTimestamp: new Date().toISOString()
-                }
-            };
-            
-            // Calculate stats for display
-            const totalViews = playlist.reduce((sum, item) => sum + (item.views || 0), 0);
-            const lastUpdated = new Date().toLocaleDateString('pt-BR');
-            
-            // Update share modal stats
-            shareTotalItems.textContent = playlist.length;
-            shareTotalViews.textContent = totalViews;
-            shareLastUpdated.textContent = lastUpdated;
-            
-            // Encode data for URL
-            try {
-                const jsonString = JSON.stringify(shareData);
-                const compressed = btoa(encodeURIComponent(jsonString));
-                shareableLink = `${window.location.origin}${window.location.pathname}?share=${compressed}`;
-                
-                // Update share link
-                shareLink.textContent = shareableLink;
-                
-                // Open share modal
-                shareModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                
-            } catch (error) {
-                console.error('Erro ao gerar link de compartilhamento:', error);
-                showNotification('Erro ao gerar link de compartilhamento', 'error');
-            }
-        }
-        
-        // Load shared playlist from URL
-        function loadSharedPlaylistFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shareParam = urlParams.get('share');
-            
-            if (!shareParam) return;
-            
-            try {
-                showLoading(true);
-                
-                // Decode data from URL
-                const jsonString = decodeURIComponent(atob(shareParam));
-                const shareData = JSON.parse(jsonString);
-                
-                if (!shareData.playlist || !Array.isArray(shareData.playlist)) {
-                    throw new Error('Formato de playlist inválido');
-                }
-                
-                // Clear current playlist and load shared one
-                playlist = shareData.playlist.map(item => ({
-                    ...item,
-                    // Ensure all properties exist
-                    settings: item.settings || {
-                        autoplay: true,
-                        controls: true,
-                        fullscreen: false
-                    },
-                    views: item.views || 0,
-                    dateAdded: item.dateAdded || Date.now()
-                }));
-                
-                // Save to localStorage
-                savePlaylist();
-                
-                // Update UI
-                updateUI();
-                
-                // Show success message
-                showNotification(`Playlist compartilhada carregada com sucesso! (${playlist.length} itens)`);
-                
-                // Clear URL parameter
-                const cleanUrl = window.location.origin + window.location.pathname;
-                window.history.replaceState({}, document.title, cleanUrl);
-                
-            } catch (error) {
-                console.error('Erro ao carregar playlist compartilhada:', error);
-                showNotification('Erro ao carregar playlist compartilhada', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Close share modal
-        function closeShareModal() {
-            shareModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-        
-        // Copy share link to clipboard
-        function copyShareLink() {
-            navigator.clipboard.writeText(shareableLink)
-                .then(() => {
-                    showNotification('Link copiado para a área de transferência!');
-                })
-                .catch(() => {
-                    showNotification('Erro ao copiar link', 'error');
-                });
-        }
-        
-        // Open share link in new tab
-        function openShareLink() {
-            window.open(shareableLink, '_blank');
-            showNotification('Abrindo playlist em nova aba...');
-        }
-        
-        // Share to WhatsApp
-        function shareToWhatsApp() {
-            const message = `🎬 Confira minha playlist no StreamFlow!\n\n${shareableLink}`;
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-            showNotification('Compartilhando no WhatsApp...');
         }
         
         // Open quick embed section
@@ -2121,11 +2429,11 @@
         // Initialize on load
         window.onload = init;
         
-        console.log('🎬 StreamFlow - Sistema de Compartilhamento Completo');
-        console.log('📋 Compartilhe playlists com TODAS as configurações');
-        console.log('⚙️  Configurações por item: auto-play, controles, tela cheia');
-        console.log('💾 Dados completos salvos e compartilhados');
-        console.log('🔗 Links permanentes com todas as informações');
+        console.log('🎬 StreamFlow - Sistema de Links Encurtados');
+        console.log('🔗 Links diretos: armazenados em localStorage');
+        console.log('✂️ Links encurtados: usando serviços externos');
+        console.log('📱 Compartilhamento: WhatsApp, Telegram, etc.');
+        console.log('💾 Playlists: salvas permanentemente');
     </script>
 </body>
 </html>
