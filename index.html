@@ -5,166 +5,629 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>StreamFlow — Playlist compartilhável</title>
 
-  <!-- LZ-String -->
+  <!-- LZ-String for compactação em URL -->
   <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+  <!-- Font Awesome (ícones) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
   <style>
-    :root{--bg:#141414;--card:#1a1a1a;--accent:#e50914;--muted:#b3b3b3;--glass:rgba(255,255,255,0.03)}
+    :root{
+      --bg:#141414; --card:#1a1a1a; --accent:#e50914; --muted:#b3b3b3; --glass: rgba(255,255,255,0.03);
+    }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui;background:var(--bg);color:#fff}
-    header{position:fixed;left:0;right:0;top:0;height:72px;padding:12px 4%;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg,rgba(0,0,0,.6),transparent);z-index:50}
+    body{margin:0;font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:var(--bg); color:#fff}
+    header{position:fixed;left:0;right:0;top:0;height:72px;padding:12px 4%;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg, rgba(0,0,0,.6), transparent);z-index:50}
     .logo{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--accent);font-size:20px}
-    .main{padding:100px 4% 40px;max-width:1200px;margin:auto}
+    .main{padding:100px 4% 40px;max-width:1200px;margin:0 auto}
     .hero{display:flex;gap:30px;align-items:center}
     .hero-left{max-width:640px}
-    .hero h1{font-size:40px;margin-bottom:10px}
+    .hero h1{font-size:40px; margin-bottom:10px}
     .hero p{color:var(--muted);margin-bottom:18px}
+
+    /* form */
     .embed-form{background:var(--card);padding:18px;border-radius:10px;display:grid;grid-template-columns:1fr 300px;gap:12px}
-    .col{display:flex;flex-direction:column;gap:8px}
-    .form-input,.form-textarea,.form-select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:#fff}
+    .embed-form .col{display:flex;flex-direction:column;gap:8px}
+    .form-input, .form-textarea, .form-select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:#fff}
+    .form-textarea{min-height:80px;resize:vertical}
+    .form-actions{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .small{padding:8px 10px;font-size:14px}
+
+    /* playlist preview */
     .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}
-    .card{background:linear-gradient(180deg,rgba(0,0,0,0.15),rgba(0,0,0,0.05));border-radius:8px;overflow:hidden;cursor:pointer}
+    .card{background:linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05));border-radius:8px;overflow:hidden;position:relative;cursor:pointer}
     .thumb{height:110px;background-size:cover;background-position:center}
-    .modal,.share-modal{position:fixed;inset:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
-    #adblock-warning{display:none;position:fixed;inset:0;background:#000000ee;color:#fff;z-index:99999;font-size:22px;text-align:center;padding:40px}
+    .card .meta{padding:10px}
+    .title{font-weight:600;font-size:14px}
+    .meta small{color:var(--muted);display:block;margin-top:6px;font-size:12px}
+
+    /* player modal */
+    .modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+    .player{width:100%;max-width:1000px;background:#000;border-radius:10px;overflow:hidden}
+    .player .player-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.6);color:#fff}
+    .player .player-body{background:#000;padding:10px}
+    .player iframe, .player video{width:100%;height:560px;border:0}
+
+    /* share modal */
+    .share-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:85;padding:20px}
+    .share-card{width:100%;max-width:560px;background:var(--card);padding:16px;border-radius:10px}
+    .linkbox{background:#111;padding:10px;border-radius:6px;font-family:monospace;word-break:break-all;color:#fff}
+
+    /* adblock warning */
+    #adblock-warning { display:none; position:fixed; inset:0; background:#000000ee; color:white; z-index:99999; font-family:Arial; padding:30px; text-align:center; font-size:20px; align-items:center; justify-content:center; flex-direction:column; gap:16px; }
+
+    /* tiny toast */
+    .toast { position: fixed; right:16px; bottom:16px; background:var(--accent); padding:10px 14px; border-radius:8px; color:#fff; z-index:9999; display:none; }
+
+    /* small adjustments */
+    .count-badge{background:#fff;color:var(--accent);padding:6px 9px;border-radius:999px;font-weight:700;margin-left:6px}
+
+    @media(max-width:900px){
+      .embed-form{grid-template-columns:1fr}
+      .player iframe, .player video{height:320px}
+    }
+
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo"><i class="fa-solid fa-play"></i> StreamFlow</div>
-  <div class="top-actions">
-    <button class="btn ghost" id="open-share">Compartilhar</button>
-    <span class="count-badge" id="badgeCount">0</span>
+  <header>
+    <div class="logo"><i class="fa-solid fa-play"></i> StreamFlow</div>
+    <div class="top-actions">
+      <button class="btn ghost" id="open-share">Compartilhar</button>
+      <div style="display:flex;align-items:center;">
+        <i class="fa-solid fa-list" style="margin-right:8px"></i>
+        <span class="count-badge" id="badgeCount">0</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="adblock-warning" style="display:none;flex-direction:column;">
+    <div style="font-size:28px">🚫 Detectamos AdBlock</div>
+    <div style="color:var(--muted);max-width:720px">Para usar o StreamFlow por favor desative o bloqueador de anúncios para este site. Você pode recarregar depois de desativar.</div>
+    <div><button class="btn" onclick="location.reload()">Tentar novamente</button></div>
   </div>
-</header>
 
-<div id="adblock-warning">
-  🚫 AdBlock detectado!<br><br>Desative o bloqueador para usar o site.<br><br>
-  <button onclick="location.reload()">Tentar novamente</button>
-</div>
+  <main class="main">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>Crie playlists e compartilhe com um link</h1>
+        <p>Adicione vídeos do YouTube, Vimeo, um iframe customizado ou um link direto. Gere um link compartilhável — quem abrir o link carrega a playlist automaticamente.</p>
 
-<main class="main">
-  <section class="hero">
-    <div class="hero-left">
-      <h1>Crie playlists e compartilhe</h1>
-      <p>Adicione vídeos de qualquer plataforma e gere um link compartilhável.</p>
+        <form id="embedForm" class="embed-form" onsubmit="addToPlaylist(event)">
+          <div class="col">
+            <label>Título</label>
+            <input id="title" class="form-input" placeholder="Ex: Meu top 10" required>
 
-      <form id="embedForm" class="embed-form" onsubmit="addToPlaylist(event)">
-        <div class="col">
-          <label>Título</label>
-          <input id="title" class="form-input" required>
+            <label>Plataforma</label>
+            <select id="platform" class="form-select">
+              <option value="youtube">YouTube</option>
+              <option value="vimeo">Vimeo</option>
+              <option value="custom">Embed (iframe)</option>
+              <option value="direct">Link Direto</option>
+            </select>
 
-          <label>Plataforma</label>
-          <select id="platform" class="form-select">
-            <option value="youtube">YouTube</option>
-            <option value="vimeo">Vimeo</option>
-            <option value="custom">Embed (iframe)</option>
-            <option value="direct">Link Direto</option>
-          </select>
+            <label>URL ou embed code</label>
+            <textarea id="code" class="form-textarea" placeholder="Cole o link ou o iframe"></textarea>
 
-          <label>URL ou Embed</label>
-          <textarea id="code" class="form-textarea"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <label style="display:flex;gap:6px;align-items:center"><input id="autoplay" type="checkbox" checked> Autoplay</label>
+              <label style="display:flex;gap:6px;align-items:center"><input id="controls" type="checkbox" checked> Controles</label>
+              <label style="display:flex;gap:6px;align-items:center"><input id="fullscreen" type="checkbox"> Tela cheia</label>
+            </div>
 
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <label><input id="autoplay" type="checkbox" checked> Autoplay</label>
-            <label><input id="controls" type="checkbox" checked> Controles</label>
-            <label><input id="fullscreen" type="checkbox"> Tela cheia</label>
+            <div class="form-actions" style="margin-top:10px">
+              <button class="btn" type="submit">Adicionar</button>
+              <button type="button" class="btn ghost" onclick="clearPlaylist()">Limpar</button>
+            </div>
           </div>
 
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn" type="submit">Adicionar</button>
-            <button type="button" class="btn ghost" onclick="clearPlaylist()">Limpar</button>
+          <div class="col" style="gap:12px">
+            <label>Thumbnail (opcional)</label>
+            <input id="image" class="form-input" placeholder="https://...jpg">
+
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">
+              <strong>Dicas:</strong>
+              <ul style="color:var(--muted);margin:6px 0 0 18px;padding:0">
+                <li>YouTube: cole o link do vídeo</li>
+                <li>Vimeo: cole o link do vídeo</li>
+                <li>Custom: cole o &lt;iframe&gt; ou a URL do embed</li>
+                <li>Direct: URL direto para vídeo/mp4 ou embed player</li>
+              </ul>
+            </div>
           </div>
+        </form>
+
+        <div style="margin-top:18px;display:flex;gap:8px;align-items:center">
+          <button class="btn ghost small" onclick="generateAndOpenShare()">Gerar link e abrir modal</button>
+          <button class="btn small" onclick="copyCurrentPlaylistAsLink()">Gerar link (copiar)</button>
+          <button class="btn small" onclick="generateShortPlaylistLink()">Gerar link curto</button>
+          <span style="color:var(--muted);font-size:13px;margin-left:8px">Compartilhe a playlist inteira com um link</span>
         </div>
 
-        <div class="col">
-          <label>Thumbnail (opcional)</label>
-          <input id="image" class="form-input">
-        </div>
-      </form>
-
-      <div style="margin-top:18px;display:flex;gap:8px">
-        <button class="btn ghost small" onclick="generateAndOpenShare()">Gerar link</button>
-        <button class="btn small" onclick="copyCurrentPlaylistAsLink()">Gerar link (copiar)</button>
-        <button class="btn small" onclick="generateShortPlaylistLink()">Gerar link curto</button>
       </div>
 
-    </div>
+      <div style="flex:1">
+        <h3 style="margin-bottom:8px">Prévia da playlist</h3>
+        <div id="grid" class="grid"></div>
+      </div>
+    </section>
+  </main>
 
-    <div style="flex:1">
-      <h3>Prévia da playlist</h3>
-      <div id="grid" class="grid"></div>
-    </div>
-  </section>
-</main>
-
-<div id="playerModal" class="modal" onclick="if(event.target===this) closePlayer()">
-  <div class="player">
-    <div class="player-head"><span id="playerTitle"></span><button onclick="closePlayer()">Fechar</button></div>
-    <div id="playerBody" class="player-body"></div>
-  </div>
-</div>
-
-<div id="shareModal" class="share-modal" onclick="if(event.target===this) closeShareModal()">
-  <div class="share-card">
-    <strong>Link gerado:</strong>
-    <div id="shareLinkBox" class="linkbox"></div>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn" onclick="copyShareLink()">Copiar</button>
+  <!-- Player Modal -->
+  <div id="playerModal" class="modal" onclick="if(event.target===this) closePlayer()">
+    <div class="player" role="dialog" aria-modal="true">
+      <div class="player-head">
+        <div id="playerTitle">Título</div>
+        <div><button class="btn ghost small" onclick="closePlayer()">Fechar</button></div>
+      </div>
+      <div class="player-body" id="playerBody">
+        <!-- iframe goes here -->
+      </div>
     </div>
   </div>
-</div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="share-modal" onclick="if(event.target===this) closeShareModal()">
+    <div class="share-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <strong>Compartilhar playlist</strong>
+        <button class="btn ghost small" onclick="closeShareModal()">Fechar</button>
+      </div>
+
+      <div style="margin-bottom:10px;color:var(--muted)">
+        Link gerado (compactado na URL). Copie e envie para quem deve acessar a playlist.
+      </div>
+
+      <div class="linkbox" id="shareLinkBox">—</div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" id="copyShareBtn" onclick="copyShareLink()">Copiar link</button>
+        <button class="btn ghost" onclick="shareWhatsApp()">Enviar WhatsApp</button>
+        <button class="btn ghost" onclick="shareTelegram()">Enviar Telegram</button>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">
+        Observação: o link não expira. Se quiser expirar automaticamente, eu posso adicionar um timestamp e remover/ignorar links antigos na leitura.
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
 
 <script>
-/* ========= Detectar AdBlock ========= */
-function checkAdBlock(){
-  const bait=document.createElement("div");bait.className="adsbox";bait.style.height="1px";
+/*
+  StreamFlow - completo:
+  - funções para adicionar mídia (YouTube, Vimeo, iframe, direct)
+  - salvar/ler localStorage
+  - compressão com LZ-String para link compartilhável
+  - detector de AdBlock
+  - encurtador próprio (localStorage)
+  - restauração de playlist via param ?p=... (compressed) ou ?playlist=pl_xxx (localStorage stored)
+*/
+
+const STORAGE_KEY = 'streamflow_playlist_v1';
+let playlist = [];
+
+/* UTIL */
+function uid(){ return 'i'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8) }
+function el(sel){ return document.querySelector(sel) }
+function showToast(msg, timeout=2000){
+  const t = el('#toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(()=> t.style.display='none', timeout);
+}
+
+/* AdBlock detection */
+function checkAdBlock() {
+  const bait = document.createElement("div");
+  bait.className = "adsbox ads banner-ad ad-unit ad-slot advertisement";
+  bait.style.height = "1px";
+  bait.style.position = "absolute";
+  bait.style.left = "-9999px";
   document.body.appendChild(bait);
-  setTimeout(()=>{
-    if(!bait.offsetParent||bait.offsetHeight===0){
-      document.getElementById("adblock-warning").style.display="flex";
-      document.body.style.overflow='hidden';
-    }
+
+  setTimeout(() => {
+    try {
+      const displayed = !!(bait.offsetParent || bait.offsetHeight || bait.clientHeight);
+      if (!displayed) {
+        el('#adblock-warning').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    } catch(e) {}
     bait.remove();
-  },600);
+  }, 600);
 }
-window.addEventListener('load',checkAdBlock);
 
-/* ========= Encurtador Próprio ========= */
-const SHORT_DB="SHORTLINK_DB_v1";
+/* Load from localStorage */
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      playlist = JSON.parse(raw);
+    } else {
+      playlist = [];
+    }
+  }catch(e){
+    console.error('Erro loadLocal',e);
+    playlist = [];
+  }
+  renderGrid();
+  updateBadge();
+}
 
-function loadShortDB(){try{return JSON.parse(localStorage.getItem(SHORT_DB))||{}}catch{return{}}}
-function saveShortDB(d){localStorage.setItem(SHORT_DB,JSON.stringify(d))}
-function shortId(){return Math.random().toString(36).substring(2,8)}
+/* Save */
+function saveLocal(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist));
+  }catch(e){
+    console.error('Erro saveLocal', e);
+  }
+  renderGrid();
+  updateBadge();
+}
+
+/* Build embed HTML */
+function buildEmbed(platform, code, settings){
+  try{
+    if(platform==='youtube'){
+      const id = extractYouTubeId(code) || code;
+      if(!id) return null;
+      const params = new URLSearchParams();
+      if(settings.autoplay) params.set('autoplay','1');
+      params.set('rel','0');
+      if(!settings.controls) params.set('controls','0');
+      const src = `https://www.youtube.com/embed/${id}?${params.toString()}`;
+      return `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+    } else if(platform==='vimeo'){
+      const id = extractVimeoId(code) || code;
+      if(!id) return null;
+      const params = new URLSearchParams();
+      if(settings.autoplay) params.set('autoplay','1');
+      params.set('title','0'); params.set('byline','0'); params.set('portrait','0');
+      const src = `https://player.vimeo.com/video/${id}?${params.toString()}`;
+      return `<iframe src="${src}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+    } else if(platform==='custom'){
+      if(code.trim().startsWith('<iframe')){
+        // try to modify attributes if needed
+        return code;
+      } else if(code.startsWith('http')){
+        const url = code + (settings.autoplay ? (code.includes('?') ? '&autoplay=1' : '?autoplay=1') : '');
+        return `<iframe src="${url}" frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+      } else {
+        return null;
+      }
+    } else if(platform==='direct'){
+      if(code.match(/\.(mp4|webm|ogg)(\?|$)/i)){
+        const autoplay = settings.autoplay ? 'autoplay' : '';
+        const controls = settings.controls ? 'controls' : '';
+        return `<video ${controls} ${autoplay} style="width:100%;height:100%" src="${code}"></video>`;
+      } else {
+        const url = code + (settings.autoplay ? (code.includes('?') ? '&autoplay=1' : '?autoplay=1') : '');
+        return `<iframe src="${url}" frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+      }
+    }
+  }catch(e){
+    console.error('buildEmbed', e);
+    return null;
+  }
+  return null;
+}
+
+/* helpers to extract IDs */
+function extractYouTubeId(url){
+  if(!url) return null;
+  // support various forms
+  const ytRegex = /(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_\-]{11})/;
+  const m = url.match(ytRegex);
+  if(m) return m[1];
+  if(url.length===11 && /^[A-Za-z0-9_\-]+$/.test(url)) return url;
+  return null;
+}
+function extractVimeoId(url){
+  if(!url) return null;
+  const m = url.match(/vimeo\.com\/(\d+)/);
+  if(m) return m[1];
+  if(/^\d+$/.test(url)) return url;
+  return null;
+}
+
+/* Add item */
+function addToPlaylist(evt){
+  if(evt) evt.preventDefault();
+  const title = (el('#title') && el('#title').value.trim()) || 'Sem título';
+  const platform = (el('#platform') && el('#platform').value) || 'youtube';
+  const code = (el('#code') && el('#code').value.trim()) || '';
+  const image = (el('#image') && el('#image').value.trim()) || '';
+  const settings = {
+    autoplay: !!(el('#autoplay') && el('#autoplay').checked),
+    controls: !!(el('#controls') && el('#controls').checked),
+    fullscreen: !!(el('#fullscreen') && el('#fullscreen').checked)
+  };
+
+  if(!code){
+    alert('Cole o link ou embed antes de adicionar.');
+    return;
+  }
+
+  let embedHtml = buildEmbed(platform, code, settings);
+  if(!embedHtml){
+    alert('Não foi possível processar o embed. Verifique o código/link.');
+    return;
+  }
+
+  const item = {
+    id: uid(),
+    title, image, platform, embed: embedHtml, original: code,
+    settings,
+    dateAdded: Date.now(),
+    views: 0
+  };
+
+  playlist.unshift(item);
+  saveLocal();
+
+  // clear form
+  if(el('#title')) el('#title').value='';
+  if(el('#code')) el('#code').value='';
+  if(el('#image')) el('#image').value='';
+  if(el('#platform')) el('#platform').value='youtube';
+  showToast('Item adicionado à playlist', 1800);
+}
+
+/* Render grid */
+function renderGrid(){
+  const grid = el('#grid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  if(!playlist || playlist.length===0){
+    grid.innerHTML = `<div style="color:var(--muted);padding:18px;background:var(--card);border-radius:8px">Nenhum item na playlist — adicione algo no formulário.</div>`;
+    updateBadge();
+    return;
+  }
+  playlist.forEach((item, idx)=>{
+    const card = document.createElement('div');
+    card.className='card';
+    const thumb = item.image || defaultThumbFor(item.platform);
+    card.innerHTML = `<div class="thumb" style="background-image:url('${thumb}')"></div>
+      <div class="meta">
+        <div class="title">${escapeHtml(item.title)}</div>
+        <small>${escapeHtml(item.platform)} • ${new Date(item.dateAdded).toLocaleDateString()}</small>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn small" onclick="playItem('${item.id}', event)"><i class="fa-solid fa-play"></i> Tocar</button>
+          <button class="btn ghost small" onclick="removeItem('${item.id}', event)"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  updateBadge();
+}
+
+/* default thumbs */
+function defaultThumbFor(platform){
+  const map = {youtube:'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800', vimeo:'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800', custom:'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800', direct:'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800'};
+  return map[platform] || map['custom'];
+}
+
+/* play item */
+function playItem(id, evt){
+  if(evt) evt.stopPropagation();
+  const it = playlist.find(i=>i.id===id);
+  if(!it) return;
+  it.views = (it.views||0)+1;
+  saveLocal();
+  if(el('#playerTitle')) el('#playerTitle').textContent = it.title;
+  if(el('#playerBody')) el('#playerBody').innerHTML = it.embed;
+  openPlayer();
+}
+
+/* open/close player */
+function openPlayer(){ if(el('#playerModal')){ el('#playerModal').style.display='flex'; document.body.style.overflow='hidden'; } }
+function closePlayer(){ if(el('#playerModal')){ el('#playerModal').style.display='none'; if(el('#playerBody')) el('#playerBody').innerHTML=''; document.body.style.overflow='auto'; } }
+
+/* remove item */
+function removeItem(id, evt){
+  if(evt) evt.stopPropagation();
+  if(!confirm('Remover item da playlist?')) return;
+  playlist = playlist.filter(i=>i.id!==id);
+  saveLocal();
+}
+
+/* clear playlist */
+function clearPlaylist(){
+  if(!confirm('Limpar toda a playlist?')) return;
+  playlist = [];
+  saveLocal();
+}
+
+/* simple escaping and badge */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+function updateBadge(){ if(el('#badgeCount')) el('#badgeCount').textContent = (playlist||[]).length; }
+
+/* SHARE: generate compressed link and copy (uses LZ-String) */
+function generateShareLink(){
+  const shareData = {
+    version: 1,
+    createdAt: Date.now(),
+    items: playlist.map(i=>({
+      id: i.id, title: i.title, image: i.image, platform: i.platform, original: i.original, settings: i.settings, dateAdded: i.dateAdded
+    }))
+  };
+  const json = JSON.stringify(shareData);
+  const compressed = LZString.compressToEncodedURIComponent(json);
+  const url = `${location.origin}${location.pathname}?p=${compressed}`;
+  return { url, compressed, size: json.length };
+}
+
+/* copy link to clipboard */
+async function copyCurrentPlaylistAsLink(){
+  if(!playlist || playlist.length===0){ alert('Playlist vazia'); return; }
+  const {url} = generateShareLink();
+  try{
+    await navigator.clipboard.writeText(url);
+    alert('Link copiado para área de transferência!');
+  }catch(e){
+    prompt('Copie manualmente o link:', url);
+  }
+}
+
+/* generate and open share modal */
+function generateAndOpenShare(){
+  if(!playlist || playlist.length===0){ alert('Playlist vazia'); return; }
+  const {url} = generateShareLink();
+  el('#shareLinkBox').textContent = url;
+  el('#shareModal').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+/* copy share link from modal */
+async function copyShareLink(){
+  const text = el('#shareLinkBox').textContent;
+  if(!text) return;
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('Link copiado!');
+  }catch(e){
+    prompt('Copie o link manualmente:', text);
+  }
+}
+
+/* share via WhatsApp / Telegram */
+function shareWhatsApp(){
+  const txt = encodeURIComponent(el('#shareLinkBox').textContent || window.location.href);
+  window.open(`https://wa.me/?text=${txt}`, '_blank');
+}
+function shareTelegram(){
+  const txt = encodeURIComponent(el('#shareLinkBox').textContent || window.location.href);
+  window.open(`https://t.me/share/url?url=${txt}`, '_blank');
+}
+
+/* ================= Encurtador próprio (localStorage) ================= */
+const SHORT_DB = "SHORTLINK_DB_v1";
+
+function loadShortDB(){ try { return JSON.parse(localStorage.getItem(SHORT_DB)) || {}; } catch { return {}; } }
+function saveShortDB(data){ localStorage.setItem(SHORT_DB, JSON.stringify(data)); }
+function shortId(){ return Math.random().toString(36).substring(2,8); }
 function createShortLink(longUrl){
-  const db=loadShortDB();
-  const existing=Object.entries(db).find(e=>e[1]===longUrl);
-  if(existing) return location.origin+location.pathname+"?s="+existing[0];
-  const id=shortId();db[id]=longUrl;saveShortDB(db);
-  return location.origin+location.pathname+"?s="+id;
+  const db = loadShortDB();
+  const found = Object.entries(db).find(e => e[1] === longUrl);
+  if(found) return `${location.origin}${location.pathname}?s=${found[0]}`;
+  const id = shortId();
+  db[id] = longUrl;
+  saveShortDB(db);
+  return `${location.origin}${location.pathname}?s=${id}`;
 }
-
 function resolveShortLinkOnLoad(){
-  const p=new URLSearchParams(location.search).get("s");
-  if(!p) return;
-  const db=loadShortDB();
-  if(db[p]) location.href=db[p];
+  const params = new URLSearchParams(location.search);
+  const s = params.get("s");
+  if(!s) return;
+  const db = loadShortDB();
+  if(db[s]) {
+    // redirect to stored long link
+    location.href = db[s];
+  } else {
+    alert('Link curto inválido ou expirado.');
+  }
 }
-resolveShortLinkOnLoad();
-
 async function generateShortPlaylistLink(){
-  const {url}=generateShareLink();
-  const short=createShortLink(url);
-  try{await navigator.clipboard.writeText(short);alert("Link curto copiado!");}catch{prompt("Copie:",short)}
+  if(!playlist || playlist.length===0){ alert('Playlist vazia'); return; }
+  const {url} = generateShareLink();
+  const short = createShortLink(url);
+  try{
+    await navigator.clipboard.writeText(short);
+    alert('Link curto copiado:\n' + short);
+  }catch(e){
+    prompt('Copie manualmente o link curto:', short);
+  }
 }
-</script>
 
-<script>
-/* ========= Todo o código original já incluso aqui ========= */
-// (Mantido exatamente como você enviou, sem alterações na lógica)
-</script>
+/* Load from compressed URL param 'p' */
+function loadFromURL(){
+  const params = new URLSearchParams(location.search);
+  const p = params.get('p') || params.get('playlist'); // older variant may use playlist id
+  if(!p) return false;
+  try{
+    // If 'p' looks like a compressed string (URI-encoded), try LZ-String
+    if(p && p.length > 50) {
+      const json = LZString.decompressFromEncodedURIComponent(p);
+      if(!json) throw new Error('decompress fail');
+      const data = JSON.parse(json);
+      if(data && data.items){
+        playlist = data.items.map(it=>({
+          id: it.id || uid(),
+          title: it.title || 'Sem título',
+          image: it.image || '',
+          platform: it.platform || 'custom',
+          original: it.original || '',
+          settings: it.settings || {},
+          embed: buildEmbed(it.platform || 'custom', it.original || '', it.settings || {autoplay:false,controls:true,fullscreen:false}),
+          dateAdded: it.dateAdded || Date.now(),
+          views: 0
+        }));
+        saveLocal();
+        history.replaceState({}, document.title, location.origin + location.pathname);
+        return true;
+      }
+    } else {
+      // maybe it is an ID stored in localStorage (custom share)
+      const stored = localStorage.getItem(`streamflow_shared_${p}`);
+      if(stored){
+        const shareData = JSON.parse(stored);
+        if(shareData && shareData.playlist){
+          playlist = shareData.playlist.map(it => ({
+            id: it.id || uid(),
+            title: it.title || 'Sem título',
+            image: it.image || '',
+            platform: it.platform || 'custom',
+            original: it.originalUrl || it.embed || '',
+            settings: it.settings || {},
+            embed: it.embed || buildEmbed(it.platform || 'custom', it.originalUrl || '', it.settings || {}),
+            dateAdded: it.dateAdded || Date.now(),
+            views: it.views || 0
+          }));
+          saveLocal();
+          history.replaceState({}, document.title, location.origin + location.pathname);
+          return true;
+        }
+      }
+    }
+  }catch(err){
+    console.error('Erro ao carregar playlist do link',err);
+  }
+  return false;
+}
 
+/* escaping */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+/* Init */
+function init(){
+  // detect adblock
+  checkAdBlock();
+
+  // resolve short link (must be before loadFromURL)
+  resolveShortLinkOnLoad();
+
+  // load local playlist
+  loadLocal();
+
+  // try load shared playlist from URL
+  const loaded = loadFromURL();
+  if(loaded){
+    // show link in modal
+    el('#shareLinkBox').textContent = location.href;
+  }
+
+  // attach open-share
+  const openShareBtn = el('#open-share');
+  if(openShareBtn) openShareBtn.addEventListener('click', ()=>{ generateAndOpenShare(); });
+
+  // attach share modal close behavior already inline in markup
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
 </body>
 </html>
