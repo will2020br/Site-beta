@@ -1,2439 +1,529 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StreamFlow - Player Estilo Netflix</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: 'Netflix Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            background: #141414;
-            color: white;
-            overflow-x: hidden;
-        }
-        
-        /* Netflix Header */
-        .netflix-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            padding: 20px 4%;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, transparent 100%);
-            z-index: 1000;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background-color 0.3s;
-        }
-        
-        .netflix-header.scrolled {
-            background: #141414;
-        }
-        
-        .logo {
-            font-size: 28px;
-            font-weight: bold;
-            color: #e50914;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo i {
-            font-size: 32px;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 20px;
-            align-items: center;
-        }
-        
-        .nav-item {
-            color: #fff;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-        
-        .nav-item:hover {
-            color: #b3b3b3;
-        }
-        
-        .nav-item.active {
-            color: #e50914;
-            font-weight: bold;
-        }
-        
-        /* Main Container */
-        .main-container {
-            margin-top: 80px;
-            padding: 0 4%;
-        }
-        
-        /* Hero Section */
-        .hero-section {
-            position: relative;
-            height: 70vh;
-            background: linear-gradient(to top, #141414 0%, transparent 50%, #141414 100%);
-            margin-bottom: 40px;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .hero-background {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.7)), 
-                        url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
-            background-size: cover;
-            background-position: center;
-            z-index: -1;
-        }
-        
-        .hero-content {
-            position: relative;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            padding: 0 60px;
-            max-width: 600px;
-        }
-        
-        .hero-title {
-            font-size: 48px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-        }
-        
-        .hero-description {
-            font-size: 20px;
-            color: #d2d2d2;
-            margin-bottom: 30px;
-            line-height: 1.4;
-        }
-        
-        .hero-buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .hero-btn {
-            padding: 12px 35px;
-            border-radius: 5px;
-            border: none;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        
-        .hero-btn.play {
-            background: #fff;
-            color: #000;
-        }
-        
-        .hero-btn.info {
-            background: rgba(109, 109, 110, 0.7);
-            color: #fff;
-        }
-        
-        .hero-btn.share {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: #fff;
-        }
-        
-        .hero-btn:hover {
-            opacity: 0.8;
-            transform: scale(1.05);
-        }
-        
-        /* Content Sections */
-        .content-section {
-            margin-bottom: 60px;
-        }
-        
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .section-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .see-all {
-            color: #e50914;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            transition: opacity 0.3s;
-        }
-        
-        .see-all:hover {
-            opacity: 0.8;
-        }
-        
-        /* Content Row */
-        .content-row {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            scrollbar-width: none;
-        }
-        
-        .content-row::-webkit-scrollbar {
-            display: none;
-        }
-        
-        /* Content Card */
-        .content-card {
-            min-width: 220px;
-            height: 320px;
-            background: #2f2f2f;
-            border-radius: 8px;
-            overflow: hidden;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.3s;
-            flex-shrink: 0;
-        }
-        
-        .content-card:hover {
-            transform: scale(1.05);
-            z-index: 100;
-        }
-        
-        .card-image {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: opacity 0.3s;
-        }
-        
-        .content-card:hover .card-image {
-            opacity: 0.3;
-        }
-        
-        .card-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
-            padding: 20px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-        }
-        
-        .content-card:hover .card-overlay {
-            opacity: 1;
-        }
-        
-        .card-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        
-        .card-meta {
-            display: flex;
-            gap: 15px;
-            font-size: 14px;
-            color: #b3b3b3;
-            margin-bottom: 15px;
-        }
-        
-        .card-buttons {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .card-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.7);
-            background: rgba(0,0,0,0.6);
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-        }
-        
-        .card-btn:hover {
-            background: #fff;
-            color: #000;
-            border-color: #fff;
-        }
-        
-        /* Quick Embed Section */
-        .quick-embed-section {
-            background: #1a1a1a;
-            border-radius: 10px;
-            padding: 30px;
-            margin-bottom: 40px;
-            border: 1px solid #333;
-        }
-        
-        .quick-embed-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-        
-        .embed-form {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .form-label {
-            font-size: 14px;
-            color: #b3b3b3;
-            font-weight: 500;
-        }
-        
-        .form-input {
-            padding: 12px 15px;
-            background: #333;
-            border: 1px solid #444;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: #e50914;
-            background: #404040;
-        }
-        
-        .form-textarea {
-            padding: 15px;
-            background: #333;
-            border: 1px solid #444;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-            resize: vertical;
-            min-height: 120px;
-            font-family: 'Courier New', monospace;
-            transition: all 0.3s;
-        }
-        
-        .form-textarea:focus {
-            outline: none;
-            border-color: #e50914;
-            background: #404040;
-        }
-        
-        .form-submit {
-            grid-column: span 2;
-            padding: 15px;
-            background: #e50914;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
-        }
-        
-        .form-submit:hover {
-            background: #f40612;
-            transform: translateY(-2px);
-        }
-        
-        /* Player Modal */
-        .player-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .player-container {
-            width: 90%;
-            max-width: 1200px;
-            height: 80vh;
-            background: #000;
-            border-radius: 10px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .player-header {
-            padding: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.8) 0%, transparent 100%);
-        }
-        
-        .player-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .close-player {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 28px;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .close-player:hover {
-            color: #e50914;
-        }
-        
-        .player-content {
-            width: 100%;
-            height: calc(100% - 80px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .video-embed {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        /* Playlist Sidebar */
-        .playlist-sidebar {
-            position: fixed;
-            right: -400px;
-            top: 0;
-            width: 400px;
-            height: 100vh;
-            background: #141414;
-            z-index: 1500;
-            transition: right 0.3s ease-in-out;
-            border-left: 1px solid #333;
-            overflow-y: auto;
-        }
-        
-        .playlist-sidebar.open {
-            right: 0;
-        }
-        
-        .sidebar-header {
-            padding: 30px;
-            background: #1a1a1a;
-            border-bottom: 1px solid #333;
-        }
-        
-        .sidebar-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #fff;
-        }
-        
-        .sidebar-subtitle {
-            color: #b3b3b3;
-            font-size: 14px;
-        }
-        
-        .sidebar-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
-        
-        .sidebar-btn {
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.3s;
-        }
-        
-        .sidebar-btn.share {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-        }
-        
-        .sidebar-btn.clear {
-            background: linear-gradient(45deg, #dc3545, #c82333);
-            color: white;
-        }
-        
-        .sidebar-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        
-        .sidebar-content {
-            padding: 20px;
-        }
-        
-        .playlist-items {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .playlist-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: #2f2f2f;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .playlist-item:hover {
-            background: #404040;
-            transform: translateX(-5px);
-        }
-        
-        .playlist-item.active {
-            background: #e50914;
-        }
-        
-        .item-number {
-            width: 30px;
-            height: 30px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            font-weight: bold;
-            font-size: 14px;
-        }
-        
-        .item-info {
-            flex: 1;
-        }
-        
-        .item-title {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .item-meta {
-            display: flex;
-            gap: 10px;
-            font-size: 12px;
-            color: #b3b3b3;
-        }
-        
-        .item-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .item-btn {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            cursor: pointer;
-            padding: 5px;
-            border-radius: 4px;
-            transition: all 0.3s;
-        }
-        
-        .item-btn:hover {
-            color: #fff;
-            background: rgba(255,255,255,0.1);
-        }
-        
-        .item-btn.delete {
-            color: #e50914;
-        }
-        
-        /* Controls */
-        .playlist-toggle {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            width: 60px;
-            height: 60px;
-            background: #e50914;
-            border-radius: 50%;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            z-index: 1001;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
-            box-shadow: 0 4px 20px rgba(229, 9, 20, 0.3);
-        }
-        
-        .playlist-toggle:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 25px rgba(229, 9, 20, 0.5);
-        }
-        
-        .playlist-toggle .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #fff;
-            color: #e50914;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-        
-        /* Share Modal */
-        .share-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .share-container {
-            width: 90%;
-            max-width: 500px;
-            background: #1a1a1a;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-        
-        .share-header {
-            padding: 20px;
-            background: #2f2f2f;
-            border-bottom: 1px solid #444;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .share-title {
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-        }
-        
-        .close-share {
-            background: none;
-            border: none;
-            color: #b3b3b3;
-            font-size: 24px;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-        
-        .close-share:hover {
-            color: #e50914;
-        }
-        
-        .share-content {
-            padding: 20px;
-        }
-        
-        .share-info {
-            margin-bottom: 20px;
-        }
-        
-        .share-stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-        
-        .stat-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #e50914;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: #b3b3b3;
-        }
-        
-        .share-note {
-            font-size: 14px;
-            color: #b3b3b3;
-            line-height: 1.5;
-        }
-        
-        .share-link-container {
-            margin: 20px 0;
-        }
-        
-        .share-link {
-            background: #333;
-            padding: 15px;
-            border-radius: 5px;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 14px;
-            color: #fff;
-            border: 1px solid #444;
-        }
-        
-        .shortened-link {
-            background: #333;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 10px 0;
-            word-break: break-all;
-            font-family: monospace;
-            font-size: 14px;
-            color: #00ff00;
-            border: 1px solid #444;
-            display: none;
-        }
-        
-        .link-options {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-        
-        .link-option-btn {
-            flex: 1;
-            padding: 10px;
-            background: #444;
-            border: none;
-            border-radius: 5px;
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .link-option-btn.active {
-            background: #e50914;
-        }
-        
-        .link-option-btn:hover:not(.active) {
-            background: #555;
-        }
-        
-        .share-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .share-action-btn {
-            flex: 1;
-            min-width: 120px;
-            padding: 12px;
-            border-radius: 5px;
-            border: none;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: all 0.3s;
-        }
-        
-        .share-action-btn.copy {
-            background: linear-gradient(45deg, #28a745, #218838);
-            color: white;
-        }
-        
-        .share-action-btn.new-tab {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            color: white;
-        }
-        
-        .share-action-btn.whatsapp {
-            background: linear-gradient(45deg, #25D366, #128C7E);
-            color: white;
-        }
-        
-        .share-action-btn.telegram {
-            background: linear-gradient(45deg, #0088cc, #006699);
-            color: white;
-        }
-        
-        .share-action-btn.shorten {
-            background: linear-gradient(45deg, #ff6b35, #ff4500);
-            color: white;
-        }
-        
-        .share-action-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-2px);
-        }
-        
-        .share-loading {
-            text-align: center;
-            padding: 10px;
-            color: #b3b3b3;
-            display: none;
-        }
-        
-        .share-loading i {
-            margin-right: 10px;
-            animation: spin 1s linear infinite;
-        }
-        
-        /* Notification */
-        .notification {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: #e50914;
-            color: white;
-            padding: 15px 25px;
-            border-radius: 8px;
-            font-weight: bold;
-            z-index: 1001;
-            animation: slideIn 0.3s ease;
-            display: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        @keyframes slideIn {
-            from {
-                transform: translateX(-100%);
-                opacity: 0;
-            }
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-        
-        /* Loading Spinner */
-        .loading-spinner {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2001;
-            display: none;
-        }
-        
-        .spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #333;
-            border-top: 3px solid #e50914;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* Responsive */
-        @media (max-width: 1024px) {
-            .embed-form {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-submit {
-                grid-column: span 1;
-            }
-            
-            .playlist-sidebar {
-                width: 350px;
-            }
-            
-            .share-actions {
-                flex-direction: column;
-            }
-            
-            .share-action-btn {
-                min-width: 100%;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .netflix-header {
-                padding: 15px 20px;
-            }
-            
-            .hero-content {
-                padding: 0 30px;
-            }
-            
-            .hero-title {
-                font-size: 36px;
-            }
-            
-            .hero-description {
-                font-size: 16px;
-            }
-            
-            .content-card {
-                min-width: 180px;
-                height: 270px;
-            }
-            
-            .playlist-sidebar {
-                width: 100%;
-            }
-            
-            .playlist-toggle {
-                bottom: 20px;
-                right: 20px;
-            }
-            
-            .hero-buttons {
-                flex-wrap: wrap;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .hero-section {
-                height: 50vh;
-            }
-            
-            .hero-content {
-                padding: 0 20px;
-            }
-            
-            .hero-title {
-                font-size: 28px;
-            }
-            
-            .hero-buttons {
-                flex-direction: column;
-                width: 100%;
-            }
-            
-            .hero-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .content-card {
-                min-width: 150px;
-                height: 225px;
-            }
-            
-            .link-options {
-                flex-direction: column;
-            }
-        }
-        
-        /* Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #2f2f2f;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #e50914;
-            border-radius: 4px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #f40612;
-        }
-    </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>StreamFlow — Playlist compartilhável</title>
+
+  <!-- LZ-String for compactação em URL -->
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.4.4/libs/lz-string.min.js"></script>
+  <!-- Font Awesome (ícones) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <style>
+    :root{
+      --bg:#141414; --card:#1a1a1a; --accent:#e50914; --muted:#b3b3b3; --glass: rgba(255,255,255,0.03);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter, system-ui, -apple-system, "Helvetica Neue", Arial; background:var(--bg); color:#fff}
+    header{position:fixed;left:0;right:0;top:0;height:72px;padding:12px 4%;display:flex;align-items:center;justify-content:space-between;background:linear-gradient(180deg, rgba(0,0,0,.6), transparent);z-index:50}
+    .logo{display:flex;align-items:center;gap:12px;font-weight:700;color:var(--accent);font-size:20px}
+    .main{padding:100px 4% 40px;max-width:1200px;margin:0 auto}
+    .hero{display:flex;gap:30px;align-items:center}
+    .hero-left{max-width:640px}
+    .hero h1{font-size:40px; margin-bottom:10px}
+    .hero p{color:var(--muted);margin-bottom:18px}
+
+    /* form */
+    .embed-form{background:var(--card);padding:18px;border-radius:10px;display:grid;grid-template-columns:1fr 300px;gap:12px}
+    .embed-form .col{display:flex;flex-direction:column;gap:8px}
+    .form-input, .form-textarea, .form-select{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);background:var(--glass);color:#fff}
+    .form-textarea{min-height:80px;resize:vertical}
+    .form-actions{display:flex;gap:8px;align-items:center}
+    .btn{background:var(--accent);color:#fff;padding:10px 14px;border-radius:8px;border:none;cursor:pointer}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06)}
+    .small{padding:8px 10px;font-size:14px}
+
+    /* playlist preview */
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-top:24px}
+    .card{background:linear-gradient(180deg, rgba(0,0,0,0.15), rgba(0,0,0,0.05));border-radius:8px;overflow:hidden;position:relative;cursor:pointer}
+    .thumb{height:110px;background-size:cover;background-position:center}
+    .card .meta{padding:10px}
+    .title{font-weight:600;font-size:14px}
+    .meta small{color:var(--muted);display:block;margin-top:6px;font-size:12px}
+
+    /* player modal */
+    .modal{position:fixed;left:0;right:0;top:0;bottom:0;background:rgba(0,0,0,0.85);display:none;align-items:center;justify-content:center;z-index:80;padding:20px}
+    .player{width:100%;max-width:1000px;background:#000;border-radius:10px;overflow:hidden}
+    .player .player-head{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.6);color:#fff}
+    .player .player-body{background:#000;padding:10px}
+    .player iframe, .player video{width:100%;height:560px;border:0}
+
+    /* share modal */
+    .share-modal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:85;padding:20px}
+    .share-card{width:100%;max-width:560px;background:var(--card);padding:16px;border-radius:10px}
+    .linkbox{background:#111;padding:10px;border-radius:6px;font-family:monospace;word-break:break-all;color:#fff}
+
+    /* sidebar (mobile friendly) */
+    .top-actions{display:flex;gap:8px;align-items:center}
+    .count-badge{background:#fff;color:var(--accent);padding:6px 9px;border-radius:999px;font-weight:700;margin-left:6px}
+
+    @media(max-width:900px){
+      .embed-form{grid-template-columns:1fr}
+      .player iframe, .player video{height:320px}
+    }
+
+  </style>
 </head>
 <body>
-    <!-- Netflix Header -->
-    <header class="netflix-header" id="netflixHeader">
-        <div class="logo">
-            <i class="fas fa-play-circle"></i>
-            <span>StreamFlow</span>
-        </div>
-        <nav class="nav-links">
-            <a href="#inicio" class="nav-item active">Início</a>
-            <a href="#series" class="nav-item">Séries</a>
-            <a href="#filmes" class="nav-item">Filmes</a>
-            <a href="#minha-lista" class="nav-item">Minha Lista</a>
-            <div class="nav-item" onclick="toggleAdBlock()">
-                <i class="fas fa-shield-alt"></i> AdBlock
-            </div>
-        </nav>
-    </header>
-    
-    <!-- Main Content -->
-    <main class="main-container">
-        <!-- Hero Section -->
-        <section class="hero-section" id="hero">
-            <div class="hero-background"></div>
-            <div class="hero-content">
-                <h1 class="hero-title">StreamFlow Premium</h1>
-                <p class="hero-description">
-                    Assista a filmes, séries e muito mais sem limites. 
-                    Adicione seus próprios conteúdos e crie sua playlist personalizada.
-                </p>
-                <div class="hero-buttons">
-                    <button class="hero-btn play" onclick="openQuickEmbed()">
-                        <i class="fas fa-play"></i> Adicionar Embed
-                    </button>
-                    <button class="hero-btn info" onclick="openPlaylistSidebar()">
-                        <i class="fas fa-info-circle"></i> Minha Playlist
-                    </button>
-                    <button class="hero-btn share" onclick="shareCompletePlaylist()">
-                        <i class="fas fa-share-alt"></i> Compartilhar
-                    </button>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Quick Embed Section -->
-        <section class="content-section">
-            <div class="quick-embed-section">
-                <h2 class="quick-embed-title">Adicionar Embed Rápido</h2>
-                <form class="embed-form" id="embedForm" onsubmit="addQuickEmbed(event)">
-                    <div class="form-group">
-                        <label class="form-label">Título do Conteúdo</label>
-                        <input type="text" class="form-input" id="embedTitle" 
-                               placeholder="Ex: Filme Favorito, Série Nova" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">URL da Imagem (Thumbnail)</label>
-                        <input type="text" class="form-input" id="embedImage" 
-                               placeholder="https://exemplo.com/imagem.jpg">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Plataforma</label>
-                        <select class="form-input" id="embedPlatform">
-                            <option value="youtube">YouTube</option>
-                            <option value="vimeo">Vimeo</option>
-                            <option value="custom">Embed Personalizado</option>
-                            <option value="direct">Link Direto</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">URL ou Código Embed</label>
-                        <textarea class="form-textarea" id="embedCode" 
-                                  placeholder="Cole aqui o link do vídeo ou código iframe completo..." required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Configurações Avançadas</label>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="checkbox" id="embedAutoplay" checked> Auto-play
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="checkbox" id="embedControls" checked> Controles
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="checkbox" id="embedFullscreen"> Tela cheia
-                            </label>
-                        </div>
-                    </div>
-                    <button type="submit" class="form-submit">
-                        <i class="fas fa-plus-circle"></i> Adicionar à Playlist
-                    </button>
-                </form>
-            </div>
-        </section>
-        
-        <!-- My Playlist Section -->
-        <section class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">Minha Playlist</h2>
-                <a href="#" class="see-all" onclick="openPlaylistSidebar()">Ver Todos</a>
-            </div>
-            <div class="content-row" id="playlistPreview">
-                <!-- Cards serão gerados dinamicamente -->
-            </div>
-        </section>
-        
-        <!-- Recently Added -->
-        <section class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">Adicionados Recentemente</h2>
-                <a href="#" class="see-all">Ver Todos</a>
-            </div>
-            <div class="content-row" id="recentContent">
-                <!-- Cards serão gerados dinamicamente -->
-            </div>
-        </section>
-        
-        <!-- Popular Now -->
-        <section class="content-section">
-            <div class="section-header">
-                <h2 class="section-title">Populares Agora</h2>
-                <a href="#" class="see-all">Explorar</a>
-            </div>
-            <div class="content-row" id="popularContent">
-                <!-- Cards serão gerados dinamicamente -->
-            </div>
-        </section>
-    </main>
-    
-    <!-- Player Modal -->
-    <div class="player-modal" id="playerModal">
-        <div class="player-container">
-            <div class="player-header">
-                <h3 class="player-title" id="playerTitle">Carregando...</h3>
-                <button class="close-player" onclick="closePlayer()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="player-content" id="playerContent">
-                <div class="empty-video" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-play-circle" style="font-size: 60px; margin-bottom: 20px; opacity: 0.3;"></i>
-                    <h3 style="color: #fff; margin-bottom: 10px;">Nenhum conteúdo selecionado</h3>
-                    <p style="color: #b3b3b3;">Selecione um conteúdo para reproduzir</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Playlist Sidebar -->
-    <div class="playlist-sidebar" id="playlistSidebar">
-        <div class="sidebar-header">
-            <h3 class="sidebar-title">Minha Playlist</h3>
-            <p class="sidebar-subtitle" id="playlistCount">0 itens</p>
-            <div class="sidebar-actions">
-                <button class="sidebar-btn share" onclick="shareCompletePlaylist()">
-                    <i class="fas fa-share-alt"></i> Compartilhar
-                </button>
-                <button class="sidebar-btn clear" onclick="clearPlaylist()">
-                    <i class="fas fa-trash-alt"></i> Limpar Tudo
-                </button>
-            </div>
-        </div>
-        <div class="sidebar-content">
-            <div class="playlist-items" id="playlistItems">
-                <!-- Itens da playlist serão gerados dinamicamente -->
-                <div style="text-align: center; padding: 40px; color: #b3b3b3;">
-                    <i class="fas fa-film" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
-                    <p>Sua playlist está vazia</p>
-                    <p style="font-size: 12px; margin-top: 10px;">Adicione conteúdos usando o formulário acima</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Share Modal -->
-    <div class="share-modal" id="shareModal">
-        <div class="share-container">
-            <div class="share-header">
-                <h3 class="share-title">
-                    <i class="fas fa-share-alt"></i> Compartilhar Playlist
-                </h3>
-                <button class="close-share" onclick="closeShareModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="share-content">
-                <div class="share-info">
-                    <div class="share-stats">
-                        <div class="stat-item">
-                            <span class="stat-value" id="shareTotalItems">0</span>
-                            <span class="stat-label">Itens</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="shareTotalViews">0</span>
-                            <span class="stat-label">Visualizações</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-value" id="shareLastUpdated">-</span>
-                            <span class="stat-label">Atualizado</span>
-                        </div>
-                    </div>
-                    <p class="share-note">
-                        Esta playlist será compartilhada com TODAS as configurações salvas, incluindo:
-                        títulos, thumbnails, códigos embed completos, configurações de player e estatísticas.
-                    </p>
-                </div>
-                
-                <div class="link-options">
-                    <button class="link-option-btn active" onclick="showLinkType('direct')">Link Direto</button>
-                    <button class="link-option-btn" onclick="showLinkType('shortened')">Link Encurtado</button>
-                </div>
-                
-                <div class="share-link-container">
-                    <div class="share-link" id="shareLink">
-                        Gerando link de compartilhamento...
-                    </div>
-                    <div class="shortened-link" id="shortenedLink">
-                        Gerando link encurtado...
-                    </div>
-                </div>
-                
-                <div class="share-loading" id="shareLoading">
-                    <i class="fas fa-spinner"></i> Gerando link encurtado...
-                </div>
-                
-                <div class="share-actions">
-                    <button class="share-action-btn copy" onclick="copyShareLink()">
-                        <i class="fas fa-copy"></i> Copiar Link
-                    </button>
-                    <button class="share-action-btn new-tab" onclick="openShareLink()">
-                        <i class="fas fa-external-link-alt"></i> Abrir
-                    </button>
-                    <button class="share-action-btn whatsapp" onclick="shareToWhatsApp()">
-                        <i class="fab fa-whatsapp"></i> WhatsApp
-                    </button>
-                    <button class="share-action-btn telegram" onclick="shareToTelegram()">
-                        <i class="fab fa-telegram"></i> Telegram
-                    </button>
-                    <button class="share-action-btn shorten" onclick="generateShortenedLink()">
-                        <i class="fas fa-link"></i> Encurtar
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Playlist Toggle Button -->
-    <button class="playlist-toggle" onclick="openPlaylistSidebar()">
-        <i class="fas fa-list"></i>
-        <span class="badge" id="playlistBadge">0</span>
-    </button>
-    
-    <!-- Loading Spinner -->
-    <div class="loading-spinner" id="loadingSpinner">
-        <div class="spinner"></div>
-    </div>
-    
-    <!-- Notification -->
-    <div class="notification" id="notification"></div>
 
-    <script>
-        // State Management
-        let playlist = [];
-        let currentMedia = null;
-        let isAdBlockEnabled = true;
-        let isSidebarOpen = false;
-        let shareableLink = '';
-        let shortenedLink = '';
-        let currentLinkType = 'direct';
-        
-        // URL Shortener Configuration
-        const SHORTENER_API = 'https://api.shrtco.de/v2/shorten?url=';
-        const BACKUP_SHORTENER = 'https://tinyurl.com/api-create.php?url=';
-        
-        // DOM Elements
-        const playerModal = document.getElementById('playerModal');
-        const playerContent = document.getElementById('playerContent');
-        const playerTitle = document.getElementById('playerTitle');
-        const playlistSidebar = document.getElementById('playlistSidebar');
-        const playlistItems = document.getElementById('playlistItems');
-        const playlistPreview = document.getElementById('playlistPreview');
-        const recentContent = document.getElementById('recentContent');
-        const popularContent = document.getElementById('popularContent');
-        const playlistBadge = document.getElementById('playlistBadge');
-        const playlistCount = document.getElementById('playlistCount');
-        const netflixHeader = document.getElementById('netflixHeader');
-        const notification = document.getElementById('notification');
-        const loadingSpinner = document.getElementById('loadingSpinner');
-        const embedForm = document.getElementById('embedForm');
-        const shareModal = document.getElementById('shareModal');
-        const shareLink = document.getElementById('shareLink');
-        const shortenedLinkEl = document.getElementById('shortenedLink');
-        const shareLoading = document.getElementById('shareLoading');
-        const shareTotalItems = document.getElementById('shareTotalItems');
-        const shareTotalViews = document.getElementById('shareTotalViews');
-        const shareLastUpdated = document.getElementById('shareLastUpdated');
-        
-        // Initialize
-        function init() {
-            loadPlaylist();
-            updateUI();
-            setupEventListeners();
-            
-            // Header scroll effect
-            window.addEventListener('scroll', () => {
-                if (window.scrollY > 100) {
-                    netflixHeader.classList.add('scrolled');
-                } else {
-                    netflixHeader.classList.remove('scrolled');
-                }
-            });
-            
-            // Platform selector change
-            document.getElementById('embedPlatform').addEventListener('change', function() {
-                const platform = this.value;
-                const embedCodeInput = document.getElementById('embedCode');
-                const placeholder = getPlaceholderForPlatform(platform);
-                embedCodeInput.placeholder = placeholder;
-            });
-            
-            // Load shared playlist from URL
-            loadSharedPlaylistFromURL();
-            
-            console.log('🎬 StreamFlow iniciado com sucesso!');
-            console.log('🔗 Sistema de links encurtados implementado');
-        }
-        
-        // Generate shareable link (versão melhorada)
-        async function generateShareLink() {
-            if (playlist.length === 0) {
-                throw new Error('Playlist vazia');
-            }
-            
-            // Prepare complete playlist data with all settings
-            const shareData = {
-                playlist: playlist.map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    image: item.image,
-                    platform: item.platform,
-                    embed: item.embed,
-                    settings: item.settings,
-                    originalUrl: item.originalUrl || item.embed,
-                    dateAdded: item.dateAdded,
-                    views: item.views,
-                    category: item.category,
-                    metadata: item.metadata
-                })),
-                metadata: {
-                    totalItems: playlist.length,
-                    totalViews: playlist.reduce((sum, item) => sum + (item.views || 0), 0),
-                    lastUpdated: Date.now(),
-                    createdBy: 'StreamFlow',
-                    version: '3.0'
-                },
-                appState: {
-                    theme: 'netflix-dark',
-                    layout: 'grid',
-                    autoplay: true,
-                    shareTimestamp: new Date().toISOString()
-                }
-            };
-            
-            // Create a unique ID for this playlist
-            const playlistId = generatePlaylistId();
-            
-            // Store playlist data in localStorage with unique ID
-            localStorage.setItem(`streamflow_shared_${playlistId}`, JSON.stringify(shareData));
-            
-            // Generate direct link
-            const directLink = `${window.location.origin}${window.location.pathname}?playlist=${playlistId}`;
-            
-            return {
-                directLink,
-                playlistId,
-                shareData
-            };
-        }
-        
-        // Generate unique playlist ID
-        function generatePlaylistId() {
-            const timestamp = Date.now().toString(36);
-            const random = Math.random().toString(36).substr(2, 9);
-            return `pl_${timestamp}_${random}`;
-        }
-        
-        // Share complete playlist with all settings
-        async function shareCompletePlaylist() {
-            if (playlist.length === 0) {
-                showNotification('Adicione conteúdos à playlist antes de compartilhar!', 'error');
-                return;
-            }
-            
-            showLoading(true);
-            
-            try {
-                // Generate share link
-                const { directLink, shareData } = await generateShareLink();
-                
-                // Calculate stats for display
-                const totalViews = playlist.reduce((sum, item) => sum + (item.views || 0), 0);
-                const lastUpdated = new Date().toLocaleDateString('pt-BR');
-                
-                // Update share modal stats
-                shareTotalItems.textContent = playlist.length;
-                shareTotalViews.textContent = totalViews;
-                shareLastUpdated.textContent = lastUpdated;
-                
-                // Set direct link
-                shareableLink = directLink;
-                shareLink.textContent = directLink;
-                
-                // Reset shortened link
-                shortenedLink = '';
-                shortenedLinkEl.textContent = 'Clique em "Encurtar" para gerar link curto';
-                shortenedLinkEl.style.display = 'none';
-                
-                // Reset link type buttons
-                document.querySelectorAll('.link-option-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                document.querySelector('.link-option-btn').classList.add('active');
-                currentLinkType = 'direct';
-                
-                // Open share modal
-                shareModal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
-                
-                // Try to generate shortened link automatically
-                setTimeout(() => {
-                    generateShortenedLink();
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Erro ao gerar link de compartilhamento:', error);
-                showNotification('Erro ao gerar link de compartilhamento', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Generate shortened link using URL shortener service
-        async function generateShortenedLink() {
-            if (!shareableLink) return;
-            
-            shareLoading.style.display = 'block';
-            shortenedLinkEl.style.display = 'none';
-            
-            try {
-                // Try primary shortener (shrtco.de)
-                const primaryUrl = `${SHORTENER_API}${encodeURIComponent(shareableLink)}`;
-                const primaryResponse = await fetch(primaryUrl);
-                
-                if (primaryResponse.ok) {
-                    const data = await primaryResponse.json();
-                    if (data.ok) {
-                        shortenedLink = data.result.full_short_link2 || data.result.full_short_link;
-                        shortenedLinkEl.textContent = shortenedLink;
-                        shortenedLinkEl.style.display = 'block';
-                        shareLoading.style.display = 'none';
-                        showNotification('Link encurtado gerado com sucesso!');
-                        return;
-                    }
-                }
-                
-                // If primary fails, try backup (tinyurl)
-                const backupUrl = `${BACKUP_SHORTENER}${encodeURIComponent(shareableLink)}`;
-                const backupResponse = await fetch(backupUrl);
-                
-                if (backupResponse.ok) {
-                    const tinyUrl = await backupResponse.text();
-                    if (tinyUrl && tinyUrl.startsWith('http')) {
-                        shortenedLink = tinyUrl;
-                        shortenedLinkEl.textContent = shortenedLink;
-                        shortenedLinkEl.style.display = 'block';
-                        shareLoading.style.display = 'none';
-                        showNotification('Link encurtado gerado com sucesso!');
-                        return;
-                    }
-                }
-                
-                // If both fail, create our own short link
-                shortenedLink = createCustomShortLink();
-                shortenedLinkEl.textContent = shortenedLink;
-                shortenedLinkEl.style.display = 'block';
-                shareLoading.style.display = 'none';
-                showNotification('Link encurtado gerado localmente!');
-                
-            } catch (error) {
-                console.error('Erro ao encurtar link:', error);
-                // Fallback to custom short link
-                shortenedLink = createCustomShortLink();
-                shortenedLinkEl.textContent = shortenedLink;
-                shortenedLinkEl.style.display = 'block';
-                shareLoading.style.display = 'none';
-                showNotification('Link encurtado gerado localmente!');
-            }
-        }
-        
-        // Create custom short link (fallback)
-        function createCustomShortLink() {
-            // Generate a short hash for the playlist
-            const playlistHash = btoa(JSON.stringify(playlist.map(item => item.id)))
-                .replace(/[+/=]/g, '')
-                .substr(0, 8)
-                .toLowerCase();
-            
-            return `${window.location.origin}/p/${playlistHash}`;
-        }
-        
-        // Show link type (direct or shortened)
-        function showLinkType(type) {
-            currentLinkType = type;
-            
-            // Update button states
-            document.querySelectorAll('.link-option-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Show/hide links
-            if (type === 'direct') {
-                shareLink.style.display = 'block';
-                shortenedLinkEl.style.display = 'none';
-            } else {
-                shareLink.style.display = 'none';
-                if (shortenedLink) {
-                    shortenedLinkEl.style.display = 'block';
-                } else {
-                    generateShortenedLink();
-                }
-            }
-        }
-        
-        // Copy share link to clipboard
-        async function copyShareLink() {
-            const linkToCopy = currentLinkType === 'direct' ? shareableLink : shortenedLink;
-            
-            if (!linkToCopy) {
-                showNotification('Nenhum link disponível para copiar!', 'error');
-                return;
-            }
-            
-            try {
-                await navigator.clipboard.writeText(linkToCopy);
-                showNotification('Link copiado para a área de transferência!');
-                
-                // Visual feedback
-                const copyBtn = document.querySelector('.share-action-btn.copy');
-                const originalText = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="fas fa-check"></i> Copiado!';
-                copyBtn.style.background = 'linear-gradient(45deg, #28a745, #218838)';
-                
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalText;
-                    copyBtn.style.background = 'linear-gradient(45deg, #28a745, #218838)';
-                }, 2000);
-                
-            } catch (error) {
-                console.error('Erro ao copiar link:', error);
-                showNotification('Erro ao copiar link', 'error');
-            }
-        }
-        
-        // Open share link in new tab
-        function openShareLink() {
-            const linkToOpen = currentLinkType === 'direct' ? shareableLink : shortenedLink;
-            
-            if (!linkToOpen) {
-                showNotification('Nenhum link disponível para abrir!', 'error');
-                return;
-            }
-            
-            window.open(linkToOpen, '_blank');
-            showNotification('Abrindo playlist em nova aba...');
-        }
-        
-        // Share to WhatsApp
-        function shareToWhatsApp() {
-            const linkToShare = currentLinkType === 'direct' ? shareableLink : shortenedLink;
-            
-            if (!linkToShare) {
-                showNotification('Nenhum link disponível para compartilhar!', 'error');
-                return;
-            }
-            
-            const message = `🎬 Confira minha playlist no StreamFlow!\n\n${linkToShare}`;
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-            showNotification('Compartilhando no WhatsApp...');
-        }
-        
-        // Share to Telegram
-        function shareToTelegram() {
-            const linkToShare = currentLinkType === 'direct' ? shareableLink : shortenedLink;
-            
-            if (!linkToShare) {
-                showNotification('Nenhum link disponível para compartilhar!', 'error');
-                return;
-            }
-            
-            const message = `Confira minha playlist no StreamFlow: ${linkToShare}`;
-            const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(linkToShare)}&text=${encodeURIComponent(message)}`;
-            window.open(telegramUrl, '_blank');
-            showNotification('Compartilhando no Telegram...');
-        }
-        
-        // Load shared playlist from URL
-        async function loadSharedPlaylistFromURL() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const playlistId = urlParams.get('playlist');
-            
-            if (!playlistId) return;
-            
-            showLoading(true);
-            
-            try {
-                // Try to load from localStorage
-                const savedData = localStorage.getItem(`streamflow_shared_${playlistId}`);
-                
-                if (savedData) {
-                    const shareData = JSON.parse(savedData);
-                    
-                    if (!shareData.playlist || !Array.isArray(shareData.playlist)) {
-                        throw new Error('Formato de playlist inválido');
-                    }
-                    
-                    // Clear current playlist and load shared one
-                    playlist = shareData.playlist.map(item => ({
-                        ...item,
-                        settings: item.settings || {
-                            autoplay: true,
-                            controls: true,
-                            fullscreen: false
-                        },
-                        views: item.views || 0,
-                        dateAdded: item.dateAdded || Date.now()
-                    }));
-                    
-                    // Save to localStorage as user's own playlist
-                    savePlaylist();
-                    
-                    // Update UI
-                    updateUI();
-                    
-                    // Show success message
-                    showNotification(`Playlist compartilhada carregada com sucesso! (${playlist.length} itens)`);
-                    
-                    // Clear URL parameter
-                    const cleanUrl = window.location.origin + window.location.pathname;
-                    window.history.replaceState({}, document.title, cleanUrl);
-                } else {
-                    // Try to load from hash-based URL
-                    if (playlistId.startsWith('pl_')) {
-                        showNotification('Playlist não encontrada ou expirada', 'error');
-                    } else {
-                        // Try old format (base64 encoded)
-                        try {
-                            const jsonString = decodeURIComponent(atob(playlistId));
-                            const shareData = JSON.parse(jsonString);
-                            
-                            if (shareData.playlist) {
-                                playlist = shareData.playlist;
-                                savePlaylist();
-                                updateUI();
-                                showNotification(`Playlist antiga carregada! (${playlist.length} itens)`);
-                            }
-                        } catch (e) {
-                            console.error('Erro ao carregar playlist antiga:', e);
-                        }
-                    }
-                }
-                
-            } catch (error) {
-                console.error('Erro ao carregar playlist compartilhada:', error);
-                showNotification('Erro ao carregar playlist compartilhada', 'error');
-            } finally {
-                showLoading(false);
-            }
-        }
-        
-        // Close share modal
-        function closeShareModal() {
-            shareModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            shareLoading.style.display = 'none';
-        }
-        
-        // Rest of the functions remain the same as before...
-        // [Previous functions like loadPlaylist, savePlaylist, addQuickEmbed, etc.]
-        
-        // Get placeholder for platform
-        function getPlaceholderForPlatform(platform) {
-            switch(platform) {
-                case 'youtube': return 'Cole o link do YouTube (ex: https://youtube.com/watch?v=ABC123)';
-                case 'vimeo': return 'Cole o link do Vimeo (ex: https://vimeo.com/123456789)';
-                case 'custom': return 'Cole o código iframe completo ou URL do embed';
-                case 'direct': return 'Cole a URL direta do vídeo ou stream';
-                default: return 'Cole aqui o link do vídeo ou código iframe completo...';
-            }
-        }
-        
-        // Load playlist from localStorage
-        function loadPlaylist() {
-            try {
-                const saved = localStorage.getItem('streamflow_playlist');
-                if (saved) {
-                    const parsed = JSON.parse(saved);
-                    playlist = parsed.map(item => ({
-                        ...item,
-                        settings: item.settings || {
-                            autoplay: true,
-                            controls: true,
-                            fullscreen: false
-                        },
-                        views: item.views || 0,
-                        dateAdded: item.dateAdded || Date.now()
-                    }));
-                    console.log(`📊 Playlist carregada: ${playlist.length} itens`);
-                }
-            } catch (error) {
-                console.error('Erro ao carregar playlist:', error);
-                playlist = [];
-            }
-        }
-        
-        // Save playlist to localStorage
-        function savePlaylist() {
-            try {
-                localStorage.setItem('streamflow_playlist', JSON.stringify(playlist));
-                localStorage.setItem('streamflow_last_updated', Date.now().toString());
-            } catch (error) {
-                console.error('Erro ao salvar playlist:', error);
-            }
-        }
-        
-        // Add quick embed with settings
-        function addQuickEmbed(event) {
-            event.preventDefault();
-            
-            const title = document.getElementById('embedTitle').value.trim();
-            const image = document.getElementById('embedImage').value.trim();
-            const platform = document.getElementById('embedPlatform').value;
-            const code = document.getElementById('embedCode').value.trim();
-            
-            // Get advanced settings
-            const settings = {
-                autoplay: document.getElementById('embedAutoplay').checked,
-                controls: document.getElementById('embedControls').checked,
-                fullscreen: document.getElementById('embedFullscreen').checked
-            };
-            
-            if (!title || !code) {
-                showNotification('Preencha todos os campos obrigatórios!', 'error');
-                return;
-            }
-            
-            // Generate embed HTML with settings
-            let embedHtml = null;
-            if (window.embedTemplates && window.embedTemplates[platform]) {
-                embedHtml = window.embedTemplates[platform](code, settings);
-            }
-            
-            if (!embedHtml) {
-                showNotification('Não foi possível processar o embed. Verifique o formato!', 'error');
-                return;
-            }
-            
-            // Create media item with all settings
-            const mediaItem = {
-                id: Date.now(),
-                title: title,
-                image: image || getDefaultImage(platform),
-                platform: platform,
-                embed: embedHtml,
-                settings: settings,
-                dateAdded: Date.now(),
-                category: 'personal',
-                views: 0,
-                originalUrl: code,
-                metadata: {
-                    createdAt: new Date().toISOString(),
-                    userAgent: navigator.userAgent,
-                    screenResolution: `${window.screen.width}x${window.screen.height}`
-                }
-            };
-            
-            // Add to playlist
-            playlist.unshift(mediaItem);
-            savePlaylist();
-            updateUI();
-            
-            // Clear form
-            embedForm.reset();
-            document.getElementById('embedPlatform').value = 'youtube';
-            document.getElementById('embedCode').placeholder = getPlaceholderForPlatform('youtube');
-            document.getElementById('embedAutoplay').checked = true;
-            document.getElementById('embedControls').checked = true;
-            document.getElementById('embedFullscreen').checked = false;
-            
-            showNotification(`"${title}" adicionado à playlist com configurações salvas!`);
-        }
-        
-        // Get default image for platform
-        function getDefaultImage(platform) {
-            const images = {
-                'youtube': 'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'vimeo': 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'custom': 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80',
-                'direct': 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'
-            };
-            return images[platform] || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80';
-        }
-        
-        // Platform Templates
-        window.embedTemplates = {
-            'youtube': (url, settings) => {
-                const videoId = extractYouTubeId(url);
-                if (videoId) {
-                    const params = new URLSearchParams();
-                    params.append('autoplay', settings.autoplay ? '1' : '0');
-                    params.append('rel', '0');
-                    params.append('modestbranding', '1');
-                    if (!settings.controls) params.append('controls', '0');
-                    
-                    return `<iframe class="video-embed" 
-                            src="https://www.youtube.com/embed/${videoId}?${params.toString()}" 
-                            frameborder="0" 
-                            allow="${settings.fullscreen ? 'fullscreen' : ''}; accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                            ${settings.fullscreen ? 'allowfullscreen' : ''}></iframe>`;
-                }
-                return null;
-            },
-            'vimeo': (url, settings) => {
-                const videoId = extractVimeoId(url);
-                if (videoId) {
-                    const params = new URLSearchParams();
-                    params.append('autoplay', settings.autoplay ? '1' : '0');
-                    params.append('title', '0');
-                    params.append('byline', '0');
-                    params.append('portrait', '0');
-                    
-                    return `<iframe class="video-embed" 
-                            src="https://player.vimeo.com/video/${videoId}?${params.toString()}" 
-                            frameborder="0" 
-                            allow="${settings.fullscreen ? 'fullscreen' : ''}; autoplay; picture-in-picture" 
-                            ${settings.fullscreen ? 'allowfullscreen' : ''}></iframe>`;
-                }
-                return null;
-            },
-            'custom': (code, settings) => {
-                // Try to parse and modify iframe
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(code, 'text/html');
-                const iframe = doc.querySelector('iframe');
-                
-                if (iframe) {
-                    // Modify iframe attributes based on settings
-                    const src = iframe.getAttribute('src') || '';
-                    const url = new URL(src.startsWith('http') ? src : `https://${src}`);
-                    
-                    if (settings.autoplay) {
-                        url.searchParams.set('autoplay', '1');
-                    }
-                    if (!settings.controls) {
-                        url.searchParams.set('controls', '0');
-                    }
-                    
-                    iframe.setAttribute('src', url.toString());
-                    iframe.setAttribute('class', 'video-embed');
-                    
-                    if (settings.fullscreen) {
-                        iframe.setAttribute('allowfullscreen', '');
-                        iframe.setAttribute('allow', 'fullscreen');
-                    }
-                    
-                    return iframe.outerHTML;
-                }
-                
-                // If it's just a URL, create iframe
-                if (code.startsWith('http')) {
-                    const url = new URL(code);
-                    if (settings.autoplay) {
-                        url.searchParams.set('autoplay', '1');
-                    }
-                    return `<iframe class="video-embed" src="${url.toString()}" 
-                            frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''}></iframe>`;
-                }
-                
-                return null;
-            },
-            'direct': (url, settings) => {
-                const videoUrl = new URL(url);
-                if (settings.autoplay) {
-                    videoUrl.searchParams.set('autoplay', '1');
-                }
-                return `<iframe class="video-embed" src="${videoUrl.toString()}" 
-                        frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''}></iframe>`;
-            }
-        };
-        
-        // Extract YouTube video ID
-        function extractYouTubeId(url) {
-            const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-            const match = url.match(regex);
-            return match ? match[1] : null;
-        }
-        
-        // Extract Vimeo video ID
-        function extractVimeoId(url) {
-            const regex = /vimeo\.com\/([0-9]+)/;
-            const match = url.match(regex);
-            return match ? match[1] : null;
-        }
-        
-        // Update UI
-        function updateUI() {
-            updatePlaylistSidebar();
-            updatePlaylistPreview();
-            updateRecentContent();
-            updatePopularContent();
-            updatePlaylistBadge();
-        }
-        
-        // Update playlist sidebar
-        function updatePlaylistSidebar() {
-            playlistItems.innerHTML = '';
-            
-            if (playlist.length === 0) {
-                playlistItems.innerHTML = `
-                    <div style="text-align: center; padding: 40px; color: #b3b3b3;">
-                        <i class="fas fa-film" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <p>Sua playlist está vazia</p>
-                        <p style="font-size: 12px; margin-top: 10px;">Adicione conteúdos usando o formulário acima</p>
-                    </div>
-                `;
-                playlistCount.textContent = '0 itens';
-                return;
-            }
-            
-            playlistCount.textContent = `${playlist.length} ${playlist.length === 1 ? 'item' : 'itens'}`;
-            
-            playlist.forEach((item, index) => {
-                const itemElement = document.createElement('div');
-                itemElement.className = `playlist-item ${currentMedia?.id === item.id ? 'active' : ''}`;
-                itemElement.dataset.id = item.id;
-                
-                // Settings badges
-                const settingsBadges = [];
-                if (item.settings?.autoplay) settingsBadges.push('▶️ Auto');
-                if (!item.settings?.controls) settingsBadges.push('🚫 Controles');
-                if (item.settings?.fullscreen) settingsBadges.push('📺 Tela Cheia');
-                
-                itemElement.innerHTML = `
-                    <div class="item-number">${index + 1}</div>
-                    <div class="item-info">
-                        <div class="item-title">${item.title}</div>
-                        <div class="item-meta">
-                            <span>${getPlatformName(item.platform)}</span>
-                            <span>${formatDate(item.dateAdded)}</span>
-                            <span>${item.views} visualizações</span>
-                            ${settingsBadges.length > 0 ? `<span>${settingsBadges.join(' ')}</span>` : ''}
-                        </div>
-                    </div>
-                    <div class="item-actions">
-                        <button class="item-btn" onclick="editMedia(${item.id}, event)">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="item-btn delete" onclick="removeFromPlaylist(${item.id}, event)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-                
-                itemElement.addEventListener('click', (e) => {
-                    if (!e.target.closest('.item-actions')) {
-                        playMedia(item.id);
-                    }
-                });
-                
-                playlistItems.appendChild(itemElement);
-            });
-        }
-        
-        // Update playlist preview (main page)
-        function updatePlaylistPreview() {
-            playlistPreview.innerHTML = '';
-            
-            const previewItems = playlist.slice(0, 6);
-            
-            previewItems.forEach((item, index) => {
-                const card = createContentCard(item, index);
-                playlistPreview.appendChild(card);
-            });
-            
-            if (previewItems.length === 0) {
-                playlistPreview.innerHTML = `
-                    <div style="min-width: 100%; text-align: center; padding: 40px; color: #b3b3b3;">
-                        <i class="fas fa-plus-circle" style="font-size: 48px; margin-bottom: 20px; opacity: 0.3;"></i>
-                        <p>Comece adicionando seu primeiro conteúdo</p>
-                        <button class="hero-btn play" onclick="openQuickEmbed()" style="margin-top: 20px;">
-                            <i class="fas fa-plus"></i> Adicionar Primeiro Item
-                        </button>
-                    </div>
-                `;
-            }
-        }
-        
-        // Create content card
-        function createContentCard(item, index) {
-            const card = document.createElement('div');
-            card.className = 'content-card';
-            card.dataset.id = item.id;
-            
-            // Settings indicator
-            const settingsIndicator = item.settings ? 
-                `<span style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); 
-                  padding: 2px 6px; border-radius: 3px; font-size: 10px; color: #e50914;">
-                  ${item.settings.autoplay ? '▶️' : ''} ${item.settings.fullscreen ? '📺' : ''}
-                </span>` : '';
-            
-            card.innerHTML = `
-                ${settingsIndicator}
-                <img src="${item.image}" alt="${item.title}" class="card-image" 
-                     onerror="this.src='https://images.unsplash.com/photo-1536240478700-b869070f9279?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80'">
-                <div class="card-overlay">
-                    <h4 class="card-title">${item.title}</h4>
-                    <div class="card-meta">
-                        <span>${getPlatformName(item.platform)}</span>
-                        <span>${item.views} views</span>
-                        <span>${formatDate(item.dateAdded)}</span>
-                    </div>
-                    <div class="card-buttons">
-                        <button class="card-btn" onclick="playMedia(${item.id}, event)">
-                            <i class="fas fa-play"></i>
-                        </button>
-                        <button class="card-btn" onclick="editMedia(${item.id}, event)">
-                            <i class="fas fa-cog"></i>
-                        </button>
-                        <button class="card-btn" onclick="removeFromPlaylist(${item.id}, event)">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            card.addEventListener('click', (e) => {
-                if (!e.target.closest('.card-btn')) {
-                    playMedia(item.id);
-                }
-            });
-            
-            return card;
-        }
-        
-        // Update recent content
-        function updateRecentContent() {
-            recentContent.innerHTML = '';
-            
-            const recentItems = [...playlist]
-                .sort((a, b) => b.dateAdded - a.dateAdded)
-                .slice(0, 8);
-            
-            recentItems.forEach((item, index) => {
-                const card = createContentCard(item, index);
-                recentContent.appendChild(card);
-            });
-            
-            if (recentItems.length === 0) {
-                recentContent.innerHTML = `
-                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
-                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
-                        <i class="fas fa-clock" style="font-size: 48px; opacity: 0.3;"></i>
-                    </div>
-                `;
-            }
-        }
-        
-        // Update popular content
-        function updatePopularContent() {
-            popularContent.innerHTML = '';
-            
-            const popularItems = [...playlist]
-                .sort((a, b) => b.views - a.views)
-                .slice(0, 8);
-            
-            popularItems.forEach((item, index) => {
-                const card = createContentCard(item, index);
-                popularContent.appendChild(card);
-            });
-            
-            if (popularItems.length === 0) {
-                popularContent.innerHTML = `
-                    <div style="min-width: 220px; height: 320px; background: #2f2f2f; border-radius: 8px; 
-                         display: flex; align-items: center; justify-content: center; color: #b3b3b3;">
-                        <i class="fas fa-fire" style="font-size: 48px; opacity: 0.3;"></i>
-                    </div>
-                `;
-            }
-        }
-        
-        // Update playlist badge
-        function updatePlaylistBadge() {
-            playlistBadge.textContent = playlist.length;
-        }
-        
-        // Get platform name
-        function getPlatformName(platform) {
-            const names = {
-                'youtube': 'YouTube',
-                'vimeo': 'Vimeo',
-                'custom': 'Embed',
-                'direct': 'Direto'
-            };
-            return names[platform] || platform;
-        }
-        
-        // Format date
-        function formatDate(timestamp) {
-            const date = new Date(timestamp);
-            const now = new Date();
-            const diff = now - date;
-            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-            
-            if (days === 0) return 'Hoje';
-            if (days === 1) return 'Ontem';
-            if (days < 7) return `${days} dias atrás`;
-            if (days < 30) return `${Math.floor(days / 7)} semanas atrás`;
-            return date.toLocaleDateString('pt-BR');
-        }
-        
-        // Play media
-        function playMedia(id, event) {
-            if (event) event.stopPropagation();
-            
-            const media = playlist.find(item => item.id === id);
-            if (!media) return;
-            
-            currentMedia = media;
-            
-            // Increment views
-            media.views = (media.views || 0) + 1;
-            savePlaylist();
-            
-            // Update player
-            playerTitle.textContent = media.title;
-            playerContent.innerHTML = media.embed;
-            
-            // Open player
-            playerModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            
-            // Update UI
-            updateUI();
-            
-            showNotification(`Reproduzindo: ${media.title}`);
-        }
-        
-        // Close player
-        function closePlayer() {
-            playerModal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-            playerContent.innerHTML = `
-                <div class="empty-video" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-play-circle" style="font-size: 60px; margin-bottom: 20px; opacity: 0.3;"></i>
-                    <h3 style="color: #fff; margin-bottom: 10px;">Nenhum conteúdo selecionado</h3>
-                    <p style="color: #b3b3b3;">Selecione um conteúdo para reproduzir</p>
-                </div>
-            `;
-        }
-        
-        // Edit media
-        function editMedia(id, event) {
-            if (event) event.stopPropagation();
-            
-            const media = playlist.find(item => item.id === id);
-            if (!media) return;
-            
-            // Create edit modal
-            const editHtml = `
-                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); 
-                     z-index: 2000; display: flex; align-items: center; justify-content: center;" 
-                     onclick="closeEditModal()">
-                    <div style="background: #1a1a1a; padding: 30px; border-radius: 10px; width: 90%; max-width: 500px;" 
-                         onclick="event.stopPropagation()">
-                        <h3 style="color: #fff; margin-bottom: 20px;">
-                            <i class="fas fa-edit"></i> Editar "${media.title}"
-                        </h3>
-                        
-                        <div style="display: flex; flex-direction: column; gap: 15px;">
-                            <div>
-                                <label style="display: block; color: #b3b3b3; margin-bottom: 5px;">Título</label>
-                                <input type="text" id="editTitle" value="${media.title}" 
-                                       style="width: 100%; padding: 10px; background: #333; border: 1px solid #444; 
-                                              border-radius: 5px; color: white;">
-                            </div>
-                            
-                            <div>
-                                <label style="display: block; color: #b3b3b3; margin-bottom: 5px;">Configurações</label>
-                                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-                                    <label style="display: flex; align-items: center; gap: 5px;">
-                                        <input type="checkbox" id="editAutoplay" ${media.settings?.autoplay ? 'checked' : ''}>
-                                        Auto-play
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 5px;">
-                                        <input type="checkbox" id="editControls" ${media.settings?.controls ? 'checked' : ''}>
-                                        Controles
-                                    </label>
-                                    <label style="display: flex; align-items: center; gap: 5px;">
-                                        <input type="checkbox" id="editFullscreen" ${media.settings?.fullscreen ? 'checked' : ''}>
-                                        Tela cheia
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                                <button onclick="saveMediaEdit(${id})" 
-                                        style="flex: 1; padding: 10px; background: #e50914; color: white; 
-                                               border: none; border-radius: 5px; cursor: pointer;">
-                                    <i class="fas fa-save"></i> Salvar
-                                </button>
-                                <button onclick="closeEditModal()" 
-                                        style="flex: 1; padding: 10px; background: #666; color: white; 
-                                               border: none; border-radius: 5px; cursor: pointer;">
-                                    Cancelar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            const editModal = document.createElement('div');
-            editModal.innerHTML = editHtml;
-            editModal.id = 'editModal';
-            document.body.appendChild(editModal);
-        }
-        
-        // Save media edit
-        function saveMediaEdit(id) {
-            const media = playlist.find(item => item.id === id);
-            if (!media) return;
-            
-            const newTitle = document.getElementById('editTitle').value;
-            const autoplay = document.getElementById('editAutoplay').checked;
-            const controls = document.getElementById('editControls').checked;
-            const fullscreen = document.getElementById('editFullscreen').checked;
-            
-            // Update media
-            media.title = newTitle;
-            media.settings = {
-                autoplay,
-                controls,
-                fullscreen
-            };
-            
-            // Regenerate embed with new settings
-            if (window.embedTemplates[media.platform]) {
-                media.embed = window.embedTemplates[media.platform](media.originalUrl || media.embed, media.settings);
-            }
-            
-            savePlaylist();
-            updateUI();
-            closeEditModal();
-            
-            showNotification(`"${newTitle}" atualizado com novas configurações!`);
-        }
-        
-        // Close edit modal
-        function closeEditModal() {
-            const editModal = document.getElementById('editModal');
-            if (editModal) {
-                editModal.remove();
-            }
-        }
-        
-        // Remove from playlist
-        function removeFromPlaylist(id, event) {
-            if (event) event.stopPropagation();
-            
-            if (!confirm('Tem certeza que deseja remover este item da playlist?')) {
-                return;
-            }
-            
-            const index = playlist.findIndex(item => item.id === id);
-            if (index === -1) return;
-            
-            const removedItem = playlist.splice(index, 1)[0];
-            savePlaylist();
-            updateUI();
-            
-            showNotification(`"${removedItem.title}" removido da playlist`);
-            
-            // If removed item was playing, close player
-            if (currentMedia?.id === id) {
-                closePlayer();
-                currentMedia = null;
-            }
-        }
-        
-        // Clear playlist
-        function clearPlaylist() {
-            if (playlist.length === 0) return;
-            
-            if (!confirm('TEM CERTEZA que deseja limpar TODA a playlist?\n\nEsta ação não pode ser desfeita!')) {
-                return;
-            }
-            
-            playlist = [];
-            currentMedia = null;
-            savePlaylist();
-            updateUI();
-            closePlayer();
-            
-            showNotification('Playlist limpa com sucesso!');
-        }
-        
-        // Open quick embed section
-        function openQuickEmbed() {
-            document.getElementById('embedForm').scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-            
-            // Focus on title input
-            document.getElementById('embedTitle').focus();
-            
-            showNotification('Preencha o formulário para adicionar um novo embed');
-        }
-        
-        // Open playlist sidebar
-        function openPlaylistSidebar() {
-            isSidebarOpen = !isSidebarOpen;
-            playlistSidebar.classList.toggle('open', isSidebarOpen);
-            
-            if (isSidebarOpen) {
-                updatePlaylistSidebar();
-                document.body.style.overflow = 'hidden';
-            } else {
-                document.body.style.overflow = 'auto';
-            }
-        }
-        
-        // Close playlist sidebar
-        function closePlaylistSidebar() {
-            isSidebarOpen = false;
-            playlistSidebar.classList.remove('open');
-            document.body.style.overflow = 'auto';
-        }
-        
-        // Toggle AdBlock
-        function toggleAdBlock() {
-            isAdBlockEnabled = !isAdBlockEnabled;
-            showNotification(isAdBlockEnabled ? 'AdBlock ativado!' : 'AdBlock desativado');
-        }
-        
-        // Show notification
-        function showNotification(message, type = 'success') {
-            notification.textContent = message;
-            notification.style.background = type === 'error' ? '#dc3545' : '#e50914';
-            notification.style.display = 'block';
-            
-            setTimeout(() => {
-                notification.style.display = 'none';
-            }, 3000);
-        }
-        
-        // Show loading
-        function showLoading(show) {
-            loadingSpinner.style.display = show ? 'block' : 'none';
-        }
-        
-        // Setup event listeners
-        function setupEventListeners() {
-            // Close sidebar when clicking outside
-            document.addEventListener('click', (e) => {
-                if (isSidebarOpen && !playlistSidebar.contains(e.target) && 
-                    !e.target.closest('.playlist-toggle')) {
-                    closePlaylistSidebar();
-                }
-            });
-            
-            // Close modals with ESC
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    if (playerModal.style.display === 'flex') {
-                        closePlayer();
-                    }
-                    if (shareModal.style.display === 'flex') {
-                        closeShareModal();
-                    }
-                    if (isSidebarOpen) {
-                        closePlaylistSidebar();
-                    }
-                    closeEditModal();
-                }
-            });
-            
-            // Close player when clicking outside
-            playerModal.addEventListener('click', (e) => {
-                if (e.target === playerModal) {
-                    closePlayer();
-                }
-            });
-            
-            // Close share modal when clicking outside
-            shareModal.addEventListener('click', (e) => {
-                if (e.target === shareModal) {
-                    closeShareModal();
-                }
-            });
-        }
-        
-        // Initialize on load
-        window.onload = init;
-        
-        console.log('🎬 StreamFlow - Sistema de Links Encurtados');
-        console.log('🔗 Links diretos: armazenados em localStorage');
-        console.log('✂️ Links encurtados: usando serviços externos');
-        console.log('📱 Compartilhamento: WhatsApp, Telegram, etc.');
-        console.log('💾 Playlists: salvas permanentemente');
-    </script>
+  <header>
+    <div class="logo"><i class="fa-solid fa-play"></i> StreamFlow</div>
+    <div class="top-actions">
+      <button class="btn ghost" id="open-share">Compartilhar</button>
+      <div style="display:flex;align-items:center;">
+        <i class="fa-solid fa-list" style="margin-right:8px"></i>
+        <span class="count-badge" id="badgeCount">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <section class="hero">
+      <div class="hero-left">
+        <h1>Crie playlists e compartilhe com um link</h1>
+        <p>Adicione vídeos do YouTube, Vimeo, um iframe customizado ou um link direto. Gere um link compartilhável — quem abrir o link carrega a playlist automaticamente.</p>
+
+        <form id="embedForm" class="embed-form" onsubmit="addToPlaylist(event)">
+          <div class="col">
+            <label>Título</label>
+            <input id="title" class="form-input" placeholder="Ex: Meu top 10" required>
+
+            <label>Plataforma</label>
+            <select id="platform" class="form-select">
+              <option value="youtube">YouTube</option>
+              <option value="vimeo">Vimeo</option>
+              <option value="custom">Embed (iframe)</option>
+              <option value="direct">Link Direto</option>
+            </select>
+
+            <label>URL ou embed code</label>
+            <textarea id="code" class="form-textarea" placeholder="Cole o link ou o iframe"></textarea>
+
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <label style="display:flex;gap:6px;align-items:center"><input id="autoplay" type="checkbox" checked> Autoplay</label>
+              <label style="display:flex;gap:6px;align-items:center"><input id="controls" type="checkbox" checked> Controles</label>
+              <label style="display:flex;gap:6px;align-items:center"><input id="fullscreen" type="checkbox"> Tela cheia</label>
+            </div>
+
+            <div class="form-actions" style="margin-top:10px">
+              <button class="btn" type="submit">Adicionar</button>
+              <button type="button" class="btn ghost" onclick="clearPlaylist()">Limpar</button>
+            </div>
+          </div>
+
+          <div class="col" style="gap:12px">
+            <label>Thumbnail (opcional)</label>
+            <input id="image" class="form-input" placeholder="https://...jpg">
+
+            <div style="margin-top:8px;color:var(--muted);font-size:13px">
+              <strong>Dicas:</strong>
+              <ul style="color:var(--muted);margin:6px 0 0 18px;padding:0">
+                <li>YouTube: cole o link do vídeo</li>
+                <li>Vimeo: cole o link do vídeo</li>
+                <li>Custom: cole o &lt;iframe&gt; ou a URL do embed</li>
+                <li>Direct: URL direto para vídeo/mp4 ou embed player</li>
+              </ul>
+            </div>
+          </div>
+        </form>
+
+        <div style="margin-top:18px;display:flex;gap:8px;align-items:center">
+          <button class="btn ghost small" onclick="generateAndOpenShare()">Gerar link e abrir modal</button>
+          <button class="btn small" onclick="copyCurrentPlaylistAsLink()">Gerar link (copiar)</button>
+          <span style="color:var(--muted);font-size:13px;margin-left:8px">Compartilhe a playlist inteira com um link</span>
+        </div>
+
+      </div>
+
+      <div style="flex:1">
+        <h3 style="margin-bottom:8px">Prévia da playlist</h3>
+        <div id="grid" class="grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Player Modal -->
+  <div id="playerModal" class="modal" onclick="if(event.target===this) closePlayer()">
+    <div class="player" role="dialog" aria-modal="true">
+      <div class="player-head">
+        <div id="playerTitle">Título</div>
+        <div><button class="btn ghost small" onclick="closePlayer()">Fechar</button></div>
+      </div>
+      <div class="player-body" id="playerBody">
+        <!-- iframe goes here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Share Modal -->
+  <div id="shareModal" class="share-modal" onclick="if(event.target===this) closeShareModal()">
+    <div class="share-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <strong>Compartilhar playlist</strong>
+        <button class="btn ghost small" onclick="closeShareModal()">Fechar</button>
+      </div>
+
+      <div style="margin-bottom:10px;color:var(--muted)">
+        Link gerado (compactado na URL). Copie e envie para quem deve acessar a playlist.
+      </div>
+
+      <div class="linkbox" id="shareLinkBox">—</div>
+
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn" id="copyShareBtn" onclick="copyShareLink()">Copiar link</button>
+        <button class="btn ghost" onclick="shareWhatsApp()">Enviar WhatsApp</button>
+        <button class="btn ghost" onclick="shareTelegram()">Enviar Telegram</button>
+      </div>
+
+      <div style="margin-top:12px;color:var(--muted);font-size:13px">
+        Observação: o link não expira. Se quiser expirar automaticamente, eu posso adicionar um timestamp e remover/ignorar links antigos na leitura.
+      </div>
+    </div>
+  </div>
+
+<script>
+/*
+  StreamFlow - implementa:
+  - playlist localStorage
+  - adicionar mídia (youtube, vimeo, iframe, direct)
+  - gerar link compartilhável com LZ-String compressToEncodedURIComponent
+  - carregar playlist da URL (param 'p')
+*/
+
+const STORAGE_KEY = 'streamflow_playlist_v1';
+let playlist = [];
+
+/* UTIL */
+function uid(){ return 'i'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8) }
+function el(sel){ return document.querySelector(sel) }
+
+/* Load from localStorage */
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      playlist = JSON.parse(raw);
+    } else {
+      playlist = [];
+    }
+  }catch(e){
+    console.error('Erro loadLocal',e);
+    playlist = [];
+  }
+  renderGrid();
+  updateBadge();
+}
+
+/* Save */
+function saveLocal(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(playlist));
+  }catch(e){
+    console.error('Erro saveLocal', e);
+  }
+  renderGrid();
+  updateBadge();
+}
+
+/* Add item */
+function addToPlaylist(evt){
+  if(evt) evt.preventDefault();
+  const title = el('#title').value.trim() || 'Sem título';
+  const platform = el('#platform').value;
+  const code = el('#code').value.trim();
+  const image = el('#image').value.trim() || '';
+  const settings = {
+    autoplay: !!el('#autoplay').checked,
+    controls: !!el('#controls').checked,
+    fullscreen: !!el('#fullscreen').checked
+  };
+
+  if(!code){
+    alert('Cole o link ou embed antes de adicionar.');
+    return;
+  }
+
+  let embedHtml = buildEmbed(platform, code, settings);
+  if(!embedHtml){
+    alert('Não foi possível processar o embed. Verifique o código/link.');
+    return;
+  }
+
+  const item = {
+    id: uid(),
+    title, image, platform, embed: embedHtml, original: code,
+    settings,
+    dateAdded: Date.now(),
+    views: 0
+  };
+
+  playlist.unshift(item);
+  saveLocal();
+
+  // clear form
+  el('#title').value=''; el('#code').value=''; el('#image').value='';
+  el('#platform').value='youtube';
+  showNotification('Item adicionado à playlist');
+}
+
+/* Build embed HTML */
+function buildEmbed(platform, code, settings){
+  try{
+    if(platform==='youtube'){
+      // accept youtube url or id
+      const id = extractYouTubeId(code) || code;
+      if(!id) return null;
+      const qs = settings.autoplay ? '?autoplay=1' : '';
+      const src = `https://www.youtube.com/embed/${id}${qs}&rel=0`;
+      return `<iframe src="${src}" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+    } else if(platform==='vimeo'){
+      const id = extractVimeoId(code) || code;
+      if(!id) return null;
+      const qs = settings.autoplay ? '?autoplay=1' : '';
+      const src = `https://player.vimeo.com/video/${id}${qs}`;
+      return `<iframe src="${src}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+    } else if(platform==='custom'){
+      // if it's an iframe tag, try to return it; else if it's a url, create iframe
+      if(code.trim().startsWith('<iframe')){
+        return code;
+      } else if(code.startsWith('http')){
+        const url = code + (settings.autoplay ? (code.includes('?') ? '&autoplay=1' : '?autoplay=1') : '');
+        return `<iframe src="${url}" frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+      } else {
+        return null;
+      }
+    } else if(platform==='direct'){
+      // direct URL to video — we'll embed in a simple video tag if it's mp4 or use iframe
+      if(code.match(/\.(mp4|webm|ogg)(\?|$)/i)){
+        const autoplay = settings.autoplay ? 'autoplay' : '';
+        const controls = settings.controls ? 'controls' : '';
+        return `<video ${controls} ${autoplay} style="width:100%;height:100%" src="${code}"></video>`;
+      } else {
+        // fallback to iframe
+        const url = code + (settings.autoplay ? (code.includes('?') ? '&autoplay=1' : '?autoplay=1') : '');
+        return `<iframe src="${url}" frameborder="0" ${settings.fullscreen ? 'allowfullscreen' : ''} style="width:100%;height:100%"></iframe>`;
+      }
+    }
+  }catch(e){
+    console.error('buildEmbed', e);
+    return null;
+  }
+  return null;
+}
+
+/* helpers to extract IDs */
+function extractYouTubeId(url){
+  if(!url) return null;
+  // try common patterns
+  const ytRegex = /(?:v=|\/embed\/|youtu\.be\/)([A-Za-z0-9_\-]{11})/;
+  const m = url.match(ytRegex);
+  if(m) return m[1];
+  // if they pasted just the ID
+  if(url.length===11 && /^[A-Za-z0-9_\-]+$/.test(url)) return url;
+  return null;
+}
+function extractVimeoId(url){
+  if(!url) return null;
+  const m = url.match(/vimeo\.com\/(\d+)/);
+  if(m) return m[1];
+  if(/^\d+$/.test(url)) return url;
+  return null;
+}
+
+/* Render grid */
+function renderGrid(){
+  const grid = el('#grid');
+  grid.innerHTML = '';
+  if(!playlist || playlist.length===0){
+    grid.innerHTML = `<div style="color:var(--muted);padding:18px;background:var(--card);border-radius:8px">Nenhum item na playlist — adicione algo no formulário.</div>`;
+    updateBadge();
+    return;
+  }
+  playlist.forEach((item, idx)=>{
+    const card = document.createElement('div');
+    card.className='card';
+    const thumb = item.image || defaultThumbFor(item.platform);
+    card.innerHTML = `<div class="thumb" style="background-image:url('${thumb}')"></div>
+      <div class="meta">
+        <div class="title">${escapeHtml(item.title)}</div>
+        <small>${item.platform} • ${new Date(item.dateAdded).toLocaleDateString()}</small>
+        <div style="margin-top:8px;display:flex;gap:8px">
+          <button class="btn small" onclick="playItem('${item.id}', event)"><i class="fa-solid fa-play"></i> Tocar</button>
+          <button class="btn ghost small" onclick="removeItem('${item.id}', event)"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+    grid.appendChild(card);
+  });
+  updateBadge();
+}
+
+/* default thumbs */
+function defaultThumbFor(platform){
+  const map = {youtube:'https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=800', vimeo:'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800', custom:'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800', direct:'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800'};
+  return map[platform] || map['custom'];
+}
+
+/* play item */
+function playItem(id, evt){
+  if(evt) evt.stopPropagation();
+  const it = playlist.find(i=>i.id===id);
+  if(!it) return;
+  it.views = (it.views||0)+1;
+  saveLocal();
+  el('#playerTitle').textContent = it.title;
+  el('#playerBody').innerHTML = it.embed;
+  openPlayer();
+}
+
+/* open/close player */
+function openPlayer(){ el('#playerModal').style.display='flex'; document.body.style.overflow='hidden' }
+function closePlayer(){ el('#playerModal').style.display='none'; el('#playerBody').innerHTML=''; document.body.style.overflow='auto' }
+
+/* remove item */
+function removeItem(id, evt){
+  if(evt) evt.stopPropagation();
+  if(!confirm('Remover item da playlist?')) return;
+  playlist = playlist.filter(i=>i.id!==id);
+  saveLocal();
+}
+
+/* clear playlist */
+function clearPlaylist(){
+  if(!confirm('Limpar toda a playlist?')) return;
+  playlist = [];
+  saveLocal();
+}
+
+/* simple notifications */
+function showNotification(msg){
+  // tiny toast: reuse browser alert? create ephemeral element
+  const n = document.createElement('div');
+  n.textContent = msg;
+  Object.assign(n.style,{position:'fixed',right:'16px',bottom:'16px',background:varOr('--accent','#e50914'),padding:'10px 14px',borderRadius:'8px',zIndex:999});
+  document.body.appendChild(n);
+  setTimeout(()=>n.remove(),2200);
+}
+function varOr(name, fallback){ try{ return getComputedStyle(document.documentElement).getPropertyValue(name) || fallback }catch(e){ return fallback }}
+
+/* escaping */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
+
+/* badge */
+function updateBadge(){ el('#badgeCount').textContent = (playlist||[]).length }
+
+/* SHARE: generate compressed link and copy */
+function generateShareLink(){
+  // prepare minimal share data to avoid huge payload
+  const shareData = {
+    version: 1,
+    createdAt: Date.now(),
+    items: playlist.map(i=>({
+      id: i.id, title: i.title, image: i.image, platform: i.platform, original: i.original, settings: i.settings, dateAdded: i.dateAdded
+    }))
+  };
+  const json = JSON.stringify(shareData);
+  const compressed = LZString.compressToEncodedURIComponent(json);
+  const url = `${location.origin}${location.pathname}?p=${compressed}`;
+  return { url, compressed, size: json.length };
+}
+
+/* copy link to clipboard and optionally open modal */
+async function copyCurrentPlaylistAsLink(){
+  if(!playlist || playlist.length===0){ alert('Playlist vazia'); return; }
+  const {url} = generateShareLink();
+  try{
+    await navigator.clipboard.writeText(url);
+    alert('Link copiado para área de transferência!');
+  }catch(e){
+    prompt('Copie manualmente o link:', url);
+  }
+}
+
+/* generate and open share modal */
+function generateAndOpenShare(){
+  if(!playlist || playlist.length===0){ alert('Playlist vazia'); return; }
+  const {url} = generateShareLink();
+  el('#shareLinkBox').textContent = url;
+  el('#shareModal').style.display='flex';
+  document.body.style.overflow='hidden';
+}
+
+/* close share modal */
+function closeShareModal(){ el('#shareModal').style.display='none'; document.body.style.overflow='auto' }
+
+/* copy share link from modal */
+async function copyShareLink(){
+  const text = el('#shareLinkBox').textContent;
+  if(!text) return;
+  try{
+    await navigator.clipboard.writeText(text);
+    alert('Link copiado!');
+  }catch(e){
+    prompt('Copie o link manualmente:', text);
+  }
+}
+
+/* share via WhatsApp / Telegram */
+function shareWhatsApp(){
+  const txt = encodeURIComponent(el('#shareLinkBox').textContent || window.location.href);
+  window.open(`https://wa.me/?text=${txt}`, '_blank');
+}
+function shareTelegram(){
+  const txt = encodeURIComponent(el('#shareLinkBox').textContent || window.location.href);
+  window.open(`https://t.me/share/url?url=${txt}`, '_blank');
+}
+
+/* On load: try to read URL param 'p' and load compressed playlist */
+function loadFromURL(){
+  const params = new URLSearchParams(location.search);
+  const p = params.get('p');
+  if(!p) return false;
+  try{
+    const json = LZString.decompressFromEncodedURIComponent(p);
+    if(!json) throw new Error('decompress fail');
+    const data = JSON.parse(json);
+    if(data && data.items){
+      // Replace current playlist (but keep in localStorage)
+      playlist = data.items.map(it=>({
+        id: it.id || uid(),
+        title: it.title || 'Sem título',
+        image: it.image || '',
+        platform: it.platform || 'custom',
+        original: it.original || '',
+        settings: it.settings || {},
+        embed: buildEmbed(it.platform || 'custom', it.original || '', it.settings || {autoplay:false,controls:true,fullscreen:false}),
+        dateAdded: it.dateAdded || Date.now(),
+        views: 0
+      }));
+      saveLocal();
+      // clean URL to avoid reloading same data on refresh
+      history.replaceState({}, document.title, location.origin + location.pathname);
+      return true;
+    }
+  }catch(err){
+    console.error('Erro ao carregar playlist do link',err);
+  }
+  return false;
+}
+
+/* init */
+function init(){
+  // load local first
+  loadLocal();
+  // try load from URL param
+  const loaded = loadFromURL();
+  if(loaded){
+    // optional: open share modal automatically
+    el('#shareLinkBox').textContent = location.href; // although replaced, user may want link
+  }
+  // attach open-share
+  el('#open-share').addEventListener('click', ()=>{ generateAndOpenShare(); });
+  // if share modal click outside closes, handled inline
+}
+
+window.addEventListener('DOMContentLoaded', init);
+
+</script>
 </body>
 </html>
